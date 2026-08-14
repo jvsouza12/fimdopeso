@@ -15,7 +15,7 @@ export interface Food {
   carbs: number;
   fat: number;
   fiber: number;
-  custom?: boolean;
+  custom?: boolean | undefined;
 }
 
 export interface RecipeIngredient {
@@ -34,8 +34,8 @@ export interface LogEntry {
   id: string;
   date: string; // yyyy-MM-dd
   meal: MealType;
-  foodId?: string;
-  recipeId?: string;
+  foodId?: string | undefined;
+  recipeId?: string | undefined;
   name: string;
   amount: number; // grams / ml / units
   kcal: number;
@@ -50,8 +50,8 @@ export interface PlanEntry {
   /** 0 = domingo ... 6 = sábado */
   weekday: number;
   meal: MealType;
-  foodId?: string;
-  recipeId?: string;
+  foodId?: string | undefined;
+  recipeId?: string | undefined;
   name: string;
   amount: number;
 }
@@ -60,18 +60,18 @@ export interface WeightEntry {
   id: string;
   date: string;
   weight: number;
-  note?: string;
+  note?: string | undefined;
 }
 
 export interface MeasureEntry {
   id: string;
   date: string;
-  waist?: number;
-  abdomen?: number;
-  hip?: number;
-  arm?: number;
-  chest?: number;
-  thigh?: number;
+  waist?: number | undefined;
+  abdomen?: number | undefined;
+  hip?: number | undefined;
+  arm?: number | undefined;
+  chest?: number | undefined;
+  thigh?: number | undefined;
 }
 
 export interface WaterEntry {
@@ -83,7 +83,7 @@ export interface FastSession {
   id: string;
   startedAt: number;
   targetHours: number;
-  endedAt?: number;
+  endedAt?: number | undefined;
 }
 
 export interface UserGoal {
@@ -92,7 +92,7 @@ export interface UserGoal {
   target: number;
   current: number;
   unit: string;
-  done?: boolean;
+  done?: boolean | undefined;
 }
 
 export interface Profile {
@@ -111,7 +111,7 @@ export interface Profile {
   fasting: boolean;
   fastingHours: number;
   deadlineWeeks: number;
-  avatar?: string;
+  avatar?: string | undefined;
 }
 
 export interface Targets {
@@ -120,7 +120,7 @@ export interface Targets {
   carbs: number;
   fat: number;
   water: number; // ml
-  manual?: boolean;
+  manual?: boolean | undefined;
 }
 
 export interface Settings {
