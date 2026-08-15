@@ -236,7 +236,10 @@ function CustomFoodForm() {
       <Button
         className="w-full"
         onClick={() => {
-          if (!form.name.trim()) return toast.error("Informe o nome do alimento");
+          if (!form.name.trim()) {
+            toast.error("Informe o nome do alimento");
+            return;
+          }
           update((d) => ({
             ...d,
             customFoods: [{ id: crypto.randomUUID(), unit: "g", custom: true, ...form }, ...d.customFoods],
