@@ -10,33 +10,103 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AguaRouteImport } from './routes/agua'
+import { Route as DietaRouteImport } from './routes/dieta'
+import { Route as EvolucaoRouteImport } from './routes/evolucao'
+import { Route as JejumRouteImport } from './routes/jejum'
+import { Route as MetasRouteImport } from './routes/metas'
+import { Route as RegistrarRouteImport } from './routes/registrar'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AguaRoute = AguaRouteImport.update({
+  id: '/agua',
+  path: '/agua',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DietaRoute = DietaRouteImport.update({
+  id: '/dieta',
+  path: '/dieta',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const EvolucaoRoute = EvolucaoRouteImport.update({
+  id: '/evolucao',
+  path: '/evolucao',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const JejumRoute = JejumRouteImport.update({
+  id: '/jejum',
+  path: '/jejum',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MetasRoute = MetasRouteImport.update({
+  id: '/metas',
+  path: '/metas',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const RegistrarRoute = RegistrarRouteImport.update({
+  id: '/registrar',
+  path: '/registrar',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/agua': typeof AguaRoute
+  '/dieta': typeof DietaRoute
+  '/evolucao': typeof EvolucaoRoute
+  '/jejum': typeof JejumRoute
+  '/metas': typeof MetasRoute
+  '/registrar': typeof RegistrarRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/agua': typeof AguaRoute
+  '/dieta': typeof DietaRoute
+  '/evolucao': typeof EvolucaoRoute
+  '/jejum': typeof JejumRoute
+  '/metas': typeof MetasRoute
+  '/registrar': typeof RegistrarRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/agua': typeof AguaRoute
+  '/dieta': typeof DietaRoute
+  '/evolucao': typeof EvolucaoRoute
+  '/jejum': typeof JejumRoute
+  '/metas': typeof MetasRoute
+  '/registrar': typeof RegistrarRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/'
+  fullPaths:
+    '/' | '/agua' | '/dieta' | '/evolucao' | '/jejum' | '/metas' | '/registrar'
   fileRoutesByTo: FileRoutesByTo
-  to: '/'
-  id: '__root__' | '/'
+  to:
+    '/' | '/agua' | '/dieta' | '/evolucao' | '/jejum' | '/metas' | '/registrar'
+  id:
+    | '__root__'
+    | '/'
+    | '/agua'
+    | '/dieta'
+    | '/evolucao'
+    | '/jejum'
+    | '/metas'
+    | '/registrar'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AguaRoute: typeof AguaRoute
+  DietaRoute: typeof DietaRoute
+  EvolucaoRoute: typeof EvolucaoRoute
+  JejumRoute: typeof JejumRoute
+  MetasRoute: typeof MetasRoute
+  RegistrarRoute: typeof RegistrarRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -48,11 +118,59 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/agua': {
+      id: '/agua'
+      path: '/agua'
+      fullPath: '/agua'
+      preLoaderRoute: typeof AguaRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/dieta': {
+      id: '/dieta'
+      path: '/dieta'
+      fullPath: '/dieta'
+      preLoaderRoute: typeof DietaRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/evolucao': {
+      id: '/evolucao'
+      path: '/evolucao'
+      fullPath: '/evolucao'
+      preLoaderRoute: typeof EvolucaoRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/jejum': {
+      id: '/jejum'
+      path: '/jejum'
+      fullPath: '/jejum'
+      preLoaderRoute: typeof JejumRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/metas': {
+      id: '/metas'
+      path: '/metas'
+      fullPath: '/metas'
+      preLoaderRoute: typeof MetasRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/registrar': {
+      id: '/registrar'
+      path: '/registrar'
+      fullPath: '/registrar'
+      preLoaderRoute: typeof RegistrarRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AguaRoute: AguaRoute,
+  DietaRoute: DietaRoute,
+  EvolucaoRoute: EvolucaoRoute,
+  JejumRoute: JejumRoute,
+  MetasRoute: MetasRoute,
+  RegistrarRoute: RegistrarRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
