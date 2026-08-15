@@ -202,7 +202,7 @@ function Measures() {
 
   const data = [...state.measures]
     .sort((a, b) => a.date.localeCompare(b.date))
-    .map((m) => ({ date: shortDate(m.date), ...m }));
+    .map((m) => ({ ...m, date: shortDate(m.date) }));
 
   return (
     <div className="space-y-4">

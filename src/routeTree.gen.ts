@@ -10,11 +10,23 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as DietaRouteImport } from './routes/dieta'
+import { Route as EvolucaoRouteImport } from './routes/evolucao'
 import { Route as RegistrarRouteImport } from './routes/registrar'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DietaRoute = DietaRouteImport.update({
+  id: '/dieta',
+  path: '/dieta',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const EvolucaoRoute = EvolucaoRouteImport.update({
+  id: '/evolucao',
+  path: '/evolucao',
   getParentRoute: () => rootRouteImport,
 } as any)
 const RegistrarRoute = RegistrarRouteImport.update({
@@ -25,27 +37,35 @@ const RegistrarRoute = RegistrarRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/dieta': typeof DietaRoute
+  '/evolucao': typeof EvolucaoRoute
   '/registrar': typeof RegistrarRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/dieta': typeof DietaRoute
+  '/evolucao': typeof EvolucaoRoute
   '/registrar': typeof RegistrarRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/dieta': typeof DietaRoute
+  '/evolucao': typeof EvolucaoRoute
   '/registrar': typeof RegistrarRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/registrar'
+  fullPaths: '/' | '/dieta' | '/evolucao' | '/registrar'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/registrar'
-  id: '__root__' | '/' | '/registrar'
+  to: '/' | '/dieta' | '/evolucao' | '/registrar'
+  id: '__root__' | '/' | '/dieta' | '/evolucao' | '/registrar'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  DietaRoute: typeof DietaRoute
+  EvolucaoRoute: typeof EvolucaoRoute
   RegistrarRoute: typeof RegistrarRoute
 }
 
@@ -56,6 +76,20 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/dieta': {
+      id: '/dieta'
+      path: '/dieta'
+      fullPath: '/dieta'
+      preLoaderRoute: typeof DietaRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/evolucao': {
+      id: '/evolucao'
+      path: '/evolucao'
+      fullPath: '/evolucao'
+      preLoaderRoute: typeof EvolucaoRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/registrar': {
@@ -70,6 +104,8 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  DietaRoute: DietaRoute,
+  EvolucaoRoute: EvolucaoRoute,
   RegistrarRoute: RegistrarRoute,
 }
 export const routeTree = rootRouteImport
