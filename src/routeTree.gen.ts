@@ -11,11 +11,17 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AguaRouteImport } from './routes/agua'
+import { Route as AssistenteRouteImport } from './routes/assistente'
+import { Route as CalculadorasRouteImport } from './routes/calculadoras'
+import { Route as ComprasRouteImport } from './routes/compras'
 import { Route as DietaRouteImport } from './routes/dieta'
 import { Route as EvolucaoRouteImport } from './routes/evolucao'
 import { Route as JejumRouteImport } from './routes/jejum'
 import { Route as MetasRouteImport } from './routes/metas'
+import { Route as PerfilRouteImport } from './routes/perfil'
+import { Route as ReceitasRouteImport } from './routes/receitas'
 import { Route as RegistrarRouteImport } from './routes/registrar'
+import { Route as RelatoriosRouteImport } from './routes/relatorios'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -25,6 +31,21 @@ const IndexRoute = IndexRouteImport.update({
 const AguaRoute = AguaRouteImport.update({
   id: '/agua',
   path: '/agua',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AssistenteRoute = AssistenteRouteImport.update({
+  id: '/assistente',
+  path: '/assistente',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CalculadorasRoute = CalculadorasRouteImport.update({
+  id: '/calculadoras',
+  path: '/calculadoras',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ComprasRoute = ComprasRouteImport.update({
+  id: '/compras',
+  path: '/compras',
   getParentRoute: () => rootRouteImport,
 } as any)
 const DietaRoute = DietaRouteImport.update({
@@ -47,66 +68,135 @@ const MetasRoute = MetasRouteImport.update({
   path: '/metas',
   getParentRoute: () => rootRouteImport,
 } as any)
+const PerfilRoute = PerfilRouteImport.update({
+  id: '/perfil',
+  path: '/perfil',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ReceitasRoute = ReceitasRouteImport.update({
+  id: '/receitas',
+  path: '/receitas',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const RegistrarRoute = RegistrarRouteImport.update({
   id: '/registrar',
   path: '/registrar',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const RelatoriosRoute = RelatoriosRouteImport.update({
+  id: '/relatorios',
+  path: '/relatorios',
   getParentRoute: () => rootRouteImport,
 } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/agua': typeof AguaRoute
+  '/assistente': typeof AssistenteRoute
+  '/calculadoras': typeof CalculadorasRoute
+  '/compras': typeof ComprasRoute
   '/dieta': typeof DietaRoute
   '/evolucao': typeof EvolucaoRoute
   '/jejum': typeof JejumRoute
   '/metas': typeof MetasRoute
+  '/perfil': typeof PerfilRoute
+  '/receitas': typeof ReceitasRoute
   '/registrar': typeof RegistrarRoute
+  '/relatorios': typeof RelatoriosRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/agua': typeof AguaRoute
+  '/assistente': typeof AssistenteRoute
+  '/calculadoras': typeof CalculadorasRoute
+  '/compras': typeof ComprasRoute
   '/dieta': typeof DietaRoute
   '/evolucao': typeof EvolucaoRoute
   '/jejum': typeof JejumRoute
   '/metas': typeof MetasRoute
+  '/perfil': typeof PerfilRoute
+  '/receitas': typeof ReceitasRoute
   '/registrar': typeof RegistrarRoute
+  '/relatorios': typeof RelatoriosRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/agua': typeof AguaRoute
+  '/assistente': typeof AssistenteRoute
+  '/calculadoras': typeof CalculadorasRoute
+  '/compras': typeof ComprasRoute
   '/dieta': typeof DietaRoute
   '/evolucao': typeof EvolucaoRoute
   '/jejum': typeof JejumRoute
   '/metas': typeof MetasRoute
+  '/perfil': typeof PerfilRoute
+  '/receitas': typeof ReceitasRoute
   '/registrar': typeof RegistrarRoute
+  '/relatorios': typeof RelatoriosRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
-    '/' | '/agua' | '/dieta' | '/evolucao' | '/jejum' | '/metas' | '/registrar'
-  fileRoutesByTo: FileRoutesByTo
-  to:
-    '/' | '/agua' | '/dieta' | '/evolucao' | '/jejum' | '/metas' | '/registrar'
-  id:
-    | '__root__'
     | '/'
     | '/agua'
+    | '/assistente'
+    | '/calculadoras'
+    | '/compras'
     | '/dieta'
     | '/evolucao'
     | '/jejum'
     | '/metas'
+    | '/perfil'
+    | '/receitas'
     | '/registrar'
+    | '/relatorios'
+  fileRoutesByTo: FileRoutesByTo
+  to:
+    | '/'
+    | '/agua'
+    | '/assistente'
+    | '/calculadoras'
+    | '/compras'
+    | '/dieta'
+    | '/evolucao'
+    | '/jejum'
+    | '/metas'
+    | '/perfil'
+    | '/receitas'
+    | '/registrar'
+    | '/relatorios'
+  id:
+    | '__root__'
+    | '/'
+    | '/agua'
+    | '/assistente'
+    | '/calculadoras'
+    | '/compras'
+    | '/dieta'
+    | '/evolucao'
+    | '/jejum'
+    | '/metas'
+    | '/perfil'
+    | '/receitas'
+    | '/registrar'
+    | '/relatorios'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AguaRoute: typeof AguaRoute
+  AssistenteRoute: typeof AssistenteRoute
+  CalculadorasRoute: typeof CalculadorasRoute
+  ComprasRoute: typeof ComprasRoute
   DietaRoute: typeof DietaRoute
   EvolucaoRoute: typeof EvolucaoRoute
   JejumRoute: typeof JejumRoute
   MetasRoute: typeof MetasRoute
+  PerfilRoute: typeof PerfilRoute
+  ReceitasRoute: typeof ReceitasRoute
   RegistrarRoute: typeof RegistrarRoute
+  RelatoriosRoute: typeof RelatoriosRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -123,6 +213,27 @@ declare module '@tanstack/react-router' {
       path: '/agua'
       fullPath: '/agua'
       preLoaderRoute: typeof AguaRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/assistente': {
+      id: '/assistente'
+      path: '/assistente'
+      fullPath: '/assistente'
+      preLoaderRoute: typeof AssistenteRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/calculadoras': {
+      id: '/calculadoras'
+      path: '/calculadoras'
+      fullPath: '/calculadoras'
+      preLoaderRoute: typeof CalculadorasRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/compras': {
+      id: '/compras'
+      path: '/compras'
+      fullPath: '/compras'
+      preLoaderRoute: typeof ComprasRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/dieta': {
@@ -153,11 +264,32 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof MetasRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/perfil': {
+      id: '/perfil'
+      path: '/perfil'
+      fullPath: '/perfil'
+      preLoaderRoute: typeof PerfilRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/receitas': {
+      id: '/receitas'
+      path: '/receitas'
+      fullPath: '/receitas'
+      preLoaderRoute: typeof ReceitasRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/registrar': {
       id: '/registrar'
       path: '/registrar'
       fullPath: '/registrar'
       preLoaderRoute: typeof RegistrarRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/relatorios': {
+      id: '/relatorios'
+      path: '/relatorios'
+      fullPath: '/relatorios'
+      preLoaderRoute: typeof RelatoriosRouteImport
       parentRoute: typeof rootRouteImport
     }
   }
@@ -166,11 +298,17 @@ declare module '@tanstack/react-router' {
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AguaRoute: AguaRoute,
+  AssistenteRoute: AssistenteRoute,
+  CalculadorasRoute: CalculadorasRoute,
+  ComprasRoute: ComprasRoute,
   DietaRoute: DietaRoute,
   EvolucaoRoute: EvolucaoRoute,
   JejumRoute: JejumRoute,
   MetasRoute: MetasRoute,
+  PerfilRoute: PerfilRoute,
+  ReceitasRoute: ReceitasRoute,
   RegistrarRoute: RegistrarRoute,
+  RelatoriosRoute: RelatoriosRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
