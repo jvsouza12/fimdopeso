@@ -11,11 +11,14 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AguaRouteImport } from './routes/agua'
+import { Route as CalculadorasRouteImport } from './routes/calculadoras'
 import { Route as DietaRouteImport } from './routes/dieta'
 import { Route as EvolucaoRouteImport } from './routes/evolucao'
 import { Route as JejumRouteImport } from './routes/jejum'
 import { Route as MetasRouteImport } from './routes/metas'
+import { Route as ReceitasRouteImport } from './routes/receitas'
 import { Route as RegistrarRouteImport } from './routes/registrar'
+import { Route as RelatoriosRouteImport } from './routes/relatorios'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -25,6 +28,11 @@ const IndexRoute = IndexRouteImport.update({
 const AguaRoute = AguaRouteImport.update({
   id: '/agua',
   path: '/agua',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CalculadorasRoute = CalculadorasRouteImport.update({
+  id: '/calculadoras',
+  path: '/calculadoras',
   getParentRoute: () => rootRouteImport,
 } as any)
 const DietaRoute = DietaRouteImport.update({
@@ -47,66 +55,109 @@ const MetasRoute = MetasRouteImport.update({
   path: '/metas',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ReceitasRoute = ReceitasRouteImport.update({
+  id: '/receitas',
+  path: '/receitas',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const RegistrarRoute = RegistrarRouteImport.update({
   id: '/registrar',
   path: '/registrar',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const RelatoriosRoute = RelatoriosRouteImport.update({
+  id: '/relatorios',
+  path: '/relatorios',
   getParentRoute: () => rootRouteImport,
 } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/agua': typeof AguaRoute
+  '/calculadoras': typeof CalculadorasRoute
   '/dieta': typeof DietaRoute
   '/evolucao': typeof EvolucaoRoute
   '/jejum': typeof JejumRoute
   '/metas': typeof MetasRoute
+  '/receitas': typeof ReceitasRoute
   '/registrar': typeof RegistrarRoute
+  '/relatorios': typeof RelatoriosRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/agua': typeof AguaRoute
+  '/calculadoras': typeof CalculadorasRoute
   '/dieta': typeof DietaRoute
   '/evolucao': typeof EvolucaoRoute
   '/jejum': typeof JejumRoute
   '/metas': typeof MetasRoute
+  '/receitas': typeof ReceitasRoute
   '/registrar': typeof RegistrarRoute
+  '/relatorios': typeof RelatoriosRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/agua': typeof AguaRoute
+  '/calculadoras': typeof CalculadorasRoute
   '/dieta': typeof DietaRoute
   '/evolucao': typeof EvolucaoRoute
   '/jejum': typeof JejumRoute
   '/metas': typeof MetasRoute
+  '/receitas': typeof ReceitasRoute
   '/registrar': typeof RegistrarRoute
+  '/relatorios': typeof RelatoriosRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
-    '/' | '/agua' | '/dieta' | '/evolucao' | '/jejum' | '/metas' | '/registrar'
-  fileRoutesByTo: FileRoutesByTo
-  to:
-    '/' | '/agua' | '/dieta' | '/evolucao' | '/jejum' | '/metas' | '/registrar'
-  id:
-    | '__root__'
     | '/'
     | '/agua'
+    | '/calculadoras'
     | '/dieta'
     | '/evolucao'
     | '/jejum'
     | '/metas'
+    | '/receitas'
     | '/registrar'
+    | '/relatorios'
+  fileRoutesByTo: FileRoutesByTo
+  to:
+    | '/'
+    | '/agua'
+    | '/calculadoras'
+    | '/dieta'
+    | '/evolucao'
+    | '/jejum'
+    | '/metas'
+    | '/receitas'
+    | '/registrar'
+    | '/relatorios'
+  id:
+    | '__root__'
+    | '/'
+    | '/agua'
+    | '/calculadoras'
+    | '/dieta'
+    | '/evolucao'
+    | '/jejum'
+    | '/metas'
+    | '/receitas'
+    | '/registrar'
+    | '/relatorios'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AguaRoute: typeof AguaRoute
+  CalculadorasRoute: typeof CalculadorasRoute
   DietaRoute: typeof DietaRoute
   EvolucaoRoute: typeof EvolucaoRoute
   JejumRoute: typeof JejumRoute
   MetasRoute: typeof MetasRoute
+  ReceitasRoute: typeof ReceitasRoute
   RegistrarRoute: typeof RegistrarRoute
+  RelatoriosRoute: typeof RelatoriosRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -123,6 +174,13 @@ declare module '@tanstack/react-router' {
       path: '/agua'
       fullPath: '/agua'
       preLoaderRoute: typeof AguaRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/calculadoras': {
+      id: '/calculadoras'
+      path: '/calculadoras'
+      fullPath: '/calculadoras'
+      preLoaderRoute: typeof CalculadorasRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/dieta': {
@@ -153,11 +211,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof MetasRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/receitas': {
+      id: '/receitas'
+      path: '/receitas'
+      fullPath: '/receitas'
+      preLoaderRoute: typeof ReceitasRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/registrar': {
       id: '/registrar'
       path: '/registrar'
       fullPath: '/registrar'
       preLoaderRoute: typeof RegistrarRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/relatorios': {
+      id: '/relatorios'
+      path: '/relatorios'
+      fullPath: '/relatorios'
+      preLoaderRoute: typeof RelatoriosRouteImport
       parentRoute: typeof rootRouteImport
     }
   }
@@ -166,11 +238,14 @@ declare module '@tanstack/react-router' {
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AguaRoute: AguaRoute,
+  CalculadorasRoute: CalculadorasRoute,
   DietaRoute: DietaRoute,
   EvolucaoRoute: EvolucaoRoute,
   JejumRoute: JejumRoute,
   MetasRoute: MetasRoute,
+  ReceitasRoute: ReceitasRoute,
   RegistrarRoute: RegistrarRoute,
+  RelatoriosRoute: RelatoriosRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
