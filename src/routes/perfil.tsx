@@ -188,6 +188,8 @@ function PerfilPage() {
         ))}
       </section>
 
+      <AccountSection />
+
       <section className="card-surface space-y-3 p-4">
         <p className="font-semibold">Aparência e dados</p>
         <div className="flex items-center justify-between">
