@@ -6,7 +6,11 @@ import { Input } from "@/components/ui/input";
 import { useStore, useDayTotals } from "@/lib/store";
 import { useProfile } from "@/components/app/Gate";
 import { round } from "@/lib/nutrition";
-import { Sparkles } from "lucide-react";
+import { Sparkles, Loader2 } from "lucide-react";
+import { useServerFn } from "@tanstack/react-start";
+import { assistantChat } from "@/lib/ai.functions";
+import { useSession } from "@/hooks/useSession";
+import { Link } from "@tanstack/react-router";
 
 export const Route = createFileRoute("/assistente")({
   head: () => ({
@@ -33,6 +37,9 @@ function AssistentePage() {
   const { profile, targets } = useProfile();
   const totals = useDayTotals();
   const [q, setQ] = useState("");
+  const [loading, setLoading] = useState(false);
+  const { session } = useSession();
+  const chat = useServerFn(assistantChat);
   const [messages, setMessages] = useState<{ role: "user" | "bot"; text: string }[]>([
     {
       role: "bot",
@@ -44,6 +51,19 @@ function AssistentePage() {
     kcal: Math.max(0, round(targets.kcal - totals.kcal)),
     protein: Math.max(0, round(targets.protein - totals.protein)),
   };
+
+  const buildContext = () =>
+    [
+      `Nome: ${profile.name}. Objetivo: ${profile.goal}. Peso atual: ${profile.weight} kg. Peso alvo: ${profile.targetWeight} kg. Altura: ${profile.height} cm.`,
+      `Metas diárias: ${targets.kcal} kcal, ${targets.protein} g de proteína, ${targets.carbs} g de carboidratos, ${targets.fat} g de gordura.`,
+      `Consumido hoje: ${round(totals.kcal)} kcal, ${round(totals.protein)} g de proteína, ${round(totals.carbs)} g de carboidratos, ${round(totals.fat)} g de gordura.`,
+      `Restante hoje: ${remaining.kcal} kcal e ${remaining.protein} g de proteína.`,
+      profile.restrictions.length ? `Restrições: ${profile.restrictions.join(", ")}.` : "Sem restrições declaradas.",
+      profile.dislikes ? `Não gosta de: ${profile.dislikes}.` : "",
+      `Receitas salvas: ${state.recipes.length}.`,
+    ]
+      .filter(Boolean)
+      .join(" ");
 
   const answer = (question: string) => {
     const t = question.toLowerCase();
@@ -68,10 +88,45 @@ function AssistentePage() {
     return `Com base no seu dia: restam ${remaining.kcal} kcal e ${remaining.protein} g de proteína para a meta. Uma refeição equilibrada seria uma fonte de proteína (~150 g), um carboidrato (~120 g de arroz ou batata) e vegetais à vontade. Você tem ${state.recipes.length} receita(s) salva(s) para reaproveitar.`;
   };
 
-  const send = (text: string) => {
-    if (!text.trim()) return;
-    setMessages((m) => [...m, { role: "user", text }, { role: "bot", text: answer(text) }]);
+  const send = async (text: string) => {
+    const question = text.trim();
+    if (!question || loading) return;
+    const history = [...messages, { role: "user" as const, text: question }];
+    setMessages(history);
     setQ("");
+
+    if (!session) {
+      setMessages([...history, { role: "bot", text: answer(question) }]);
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const res = await chat({
+        data: {
+          messages: history
+            .slice(1)
+            .slice(-8)
+            .map((m) => ({ role: m.role === "user" ? ("user" as const) : ("assistant" as const), content: m.text })),
+          context: buildContext(),
+        },
+      });
+      setMessages([
+        ...history,
+        {
+          role: "bot",
+          text:
+            res.reply ??
+            (res.error === "rate_limit"
+              ? "Muitas perguntas em pouco tempo. Tente de novo em instantes."
+              : answer(question)),
+        },
+      ]);
+    } catch {
+      setMessages([...history, { role: "bot", text: answer(question) }]);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -97,7 +152,7 @@ function AssistentePage() {
         {SUGGESTIONS.map((s) => (
           <button
             key={s}
-            onClick={() => send(s)}
+            onClick={() => void send(s)}
             className="rounded-full border border-border bg-surface-2 px-3 py-1.5 text-xs"
           >
             {s}
@@ -109,14 +164,25 @@ function AssistentePage() {
         <Input
           value={q}
           onChange={(e) => setQ(e.target.value)}
-          onKeyDown={(e) => e.key === "Enter" && send(q)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") void send(q);
+          }}
           placeholder="Pergunte algo sobre sua alimentação"
           maxLength={300}
         />
-        <Button onClick={() => send(q)}>
-          <Sparkles className="size-4" />
+        <Button onClick={() => void send(q)} disabled={loading}>
+          {loading ? <Loader2 className="size-4 animate-spin" /> : <Sparkles className="size-4" />}
         </Button>
       </div>
+
+      {!session && (
+        <p className="text-xs text-muted-foreground">
+          <Link to="/auth" className="text-primary underline-offset-4 hover:underline">
+            Entre na sua conta
+          </Link>{" "}
+          para conversar com o assistente com inteligência artificial e respostas personalizadas.
+        </p>
+      )}
 
       <p className="text-xs text-muted-foreground">
         O assistente oferece orientações gerais e não substitui acompanhamento profissional.
