@@ -12,6 +12,7 @@ import type { ActivityLevel, Goal } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { Download, RefreshCw, Trash2 } from "lucide-react";
+import { AccountSection } from "@/components/app/AccountSection";
 
 export const Route = createFileRoute("/perfil")({
   head: () => ({
