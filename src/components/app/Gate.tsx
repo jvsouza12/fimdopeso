@@ -1,10 +1,16 @@
 import type { ReactNode } from "react";
+import { useRouterState } from "@tanstack/react-router";
 import { useStore } from "@/lib/store";
 import { AppShell } from "./AppShell";
 import { Onboarding } from "./Onboarding";
 
+const PUBLIC_PATHS = ["/auth", "/reset-password"];
+
 export function Gate({ children }: { children: ReactNode }) {
   const { state, hydrated } = useStore();
+  const pathname = useRouterState({ select: (r) => r.location.pathname });
+
+  if (PUBLIC_PATHS.includes(pathname)) return <>{children}</>;
 
   if (!hydrated) {
     return (

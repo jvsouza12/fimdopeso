@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AguaRouteImport } from './routes/agua'
 import { Route as AssistenteRouteImport } from './routes/assistente'
+import { Route as AuthRouteImport } from './routes/auth'
 import { Route as CalculadorasRouteImport } from './routes/calculadoras'
 import { Route as ComprasRouteImport } from './routes/compras'
 import { Route as DietaRouteImport } from './routes/dieta'
@@ -22,6 +23,7 @@ import { Route as PerfilRouteImport } from './routes/perfil'
 import { Route as ReceitasRouteImport } from './routes/receitas'
 import { Route as RegistrarRouteImport } from './routes/registrar'
 import { Route as RelatoriosRouteImport } from './routes/relatorios'
+import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -36,6 +38,11 @@ const AguaRoute = AguaRouteImport.update({
 const AssistenteRoute = AssistenteRouteImport.update({
   id: '/assistente',
   path: '/assistente',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthRoute = AuthRouteImport.update({
+  id: '/auth',
+  path: '/auth',
   getParentRoute: () => rootRouteImport,
 } as any)
 const CalculadorasRoute = CalculadorasRouteImport.update({
@@ -88,11 +95,17 @@ const RelatoriosRoute = RelatoriosRouteImport.update({
   path: '/relatorios',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ResetPasswordRoute = ResetPasswordRouteImport.update({
+  id: '/reset-password',
+  path: '/reset-password',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/agua': typeof AguaRoute
   '/assistente': typeof AssistenteRoute
+  '/auth': typeof AuthRoute
   '/calculadoras': typeof CalculadorasRoute
   '/compras': typeof ComprasRoute
   '/dieta': typeof DietaRoute
@@ -103,11 +116,13 @@ export interface FileRoutesByFullPath {
   '/receitas': typeof ReceitasRoute
   '/registrar': typeof RegistrarRoute
   '/relatorios': typeof RelatoriosRoute
+  '/reset-password': typeof ResetPasswordRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/agua': typeof AguaRoute
   '/assistente': typeof AssistenteRoute
+  '/auth': typeof AuthRoute
   '/calculadoras': typeof CalculadorasRoute
   '/compras': typeof ComprasRoute
   '/dieta': typeof DietaRoute
@@ -118,12 +133,14 @@ export interface FileRoutesByTo {
   '/receitas': typeof ReceitasRoute
   '/registrar': typeof RegistrarRoute
   '/relatorios': typeof RelatoriosRoute
+  '/reset-password': typeof ResetPasswordRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/agua': typeof AguaRoute
   '/assistente': typeof AssistenteRoute
+  '/auth': typeof AuthRoute
   '/calculadoras': typeof CalculadorasRoute
   '/compras': typeof ComprasRoute
   '/dieta': typeof DietaRoute
@@ -134,6 +151,7 @@ export interface FileRoutesById {
   '/receitas': typeof ReceitasRoute
   '/registrar': typeof RegistrarRoute
   '/relatorios': typeof RelatoriosRoute
+  '/reset-password': typeof ResetPasswordRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -141,6 +159,7 @@ export interface FileRouteTypes {
     | '/'
     | '/agua'
     | '/assistente'
+    | '/auth'
     | '/calculadoras'
     | '/compras'
     | '/dieta'
@@ -151,11 +170,13 @@ export interface FileRouteTypes {
     | '/receitas'
     | '/registrar'
     | '/relatorios'
+    | '/reset-password'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/agua'
     | '/assistente'
+    | '/auth'
     | '/calculadoras'
     | '/compras'
     | '/dieta'
@@ -166,11 +187,13 @@ export interface FileRouteTypes {
     | '/receitas'
     | '/registrar'
     | '/relatorios'
+    | '/reset-password'
   id:
     | '__root__'
     | '/'
     | '/agua'
     | '/assistente'
+    | '/auth'
     | '/calculadoras'
     | '/compras'
     | '/dieta'
@@ -181,12 +204,14 @@ export interface FileRouteTypes {
     | '/receitas'
     | '/registrar'
     | '/relatorios'
+    | '/reset-password'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AguaRoute: typeof AguaRoute
   AssistenteRoute: typeof AssistenteRoute
+  AuthRoute: typeof AuthRoute
   CalculadorasRoute: typeof CalculadorasRoute
   ComprasRoute: typeof ComprasRoute
   DietaRoute: typeof DietaRoute
@@ -197,6 +222,7 @@ export interface RootRouteChildren {
   ReceitasRoute: typeof ReceitasRoute
   RegistrarRoute: typeof RegistrarRoute
   RelatoriosRoute: typeof RelatoriosRoute
+  ResetPasswordRoute: typeof ResetPasswordRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -220,6 +246,13 @@ declare module '@tanstack/react-router' {
       path: '/assistente'
       fullPath: '/assistente'
       preLoaderRoute: typeof AssistenteRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/auth': {
+      id: '/auth'
+      path: '/auth'
+      fullPath: '/auth'
+      preLoaderRoute: typeof AuthRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/calculadoras': {
@@ -292,6 +325,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof RelatoriosRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/reset-password': {
+      id: '/reset-password'
+      path: '/reset-password'
+      fullPath: '/reset-password'
+      preLoaderRoute: typeof ResetPasswordRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -299,6 +339,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AguaRoute: AguaRoute,
   AssistenteRoute: AssistenteRoute,
+  AuthRoute: AuthRoute,
   CalculadorasRoute: CalculadorasRoute,
   ComprasRoute: ComprasRoute,
   DietaRoute: DietaRoute,
@@ -309,6 +350,7 @@ const rootRouteChildren: RootRouteChildren = {
   ReceitasRoute: ReceitasRoute,
   RegistrarRoute: RegistrarRoute,
   RelatoriosRoute: RelatoriosRoute,
+  ResetPasswordRoute: ResetPasswordRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

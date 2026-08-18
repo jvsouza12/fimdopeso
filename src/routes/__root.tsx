@@ -14,6 +14,7 @@ import { reportLovableError } from "../lib/lovable-error-reporting";
 import { StoreProvider } from "@/lib/store";
 import { Gate } from "@/components/app/Gate";
 import { Toaster } from "@/components/ui/sonner";
+import { CloudSync } from "@/lib/cloud-sync";
 
 function NotFoundComponent() {
   return (
@@ -124,6 +125,7 @@ function RootComponent() {
   return (
     <QueryClientProvider client={queryClient}>
       <StoreProvider>
+        <CloudSync />
         <Gate>
           {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
           <Outlet />
