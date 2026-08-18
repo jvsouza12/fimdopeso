@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AguaRouteImport } from './routes/agua'
 import { Route as AssistenteRouteImport } from './routes/assistente'
+import { Route as AuthRouteImport } from './routes/auth'
 import { Route as CalculadorasRouteImport } from './routes/calculadoras'
 import { Route as ComprasRouteImport } from './routes/compras'
 import { Route as DietaRouteImport } from './routes/dieta'
@@ -36,6 +37,11 @@ const AguaRoute = AguaRouteImport.update({
 const AssistenteRoute = AssistenteRouteImport.update({
   id: '/assistente',
   path: '/assistente',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthRoute = AuthRouteImport.update({
+  id: '/auth',
+  path: '/auth',
   getParentRoute: () => rootRouteImport,
 } as any)
 const CalculadorasRoute = CalculadorasRouteImport.update({
@@ -93,6 +99,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/agua': typeof AguaRoute
   '/assistente': typeof AssistenteRoute
+  '/auth': typeof AuthRoute
   '/calculadoras': typeof CalculadorasRoute
   '/compras': typeof ComprasRoute
   '/dieta': typeof DietaRoute
@@ -108,6 +115,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/agua': typeof AguaRoute
   '/assistente': typeof AssistenteRoute
+  '/auth': typeof AuthRoute
   '/calculadoras': typeof CalculadorasRoute
   '/compras': typeof ComprasRoute
   '/dieta': typeof DietaRoute
@@ -124,6 +132,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/agua': typeof AguaRoute
   '/assistente': typeof AssistenteRoute
+  '/auth': typeof AuthRoute
   '/calculadoras': typeof CalculadorasRoute
   '/compras': typeof ComprasRoute
   '/dieta': typeof DietaRoute
@@ -141,6 +150,7 @@ export interface FileRouteTypes {
     | '/'
     | '/agua'
     | '/assistente'
+    | '/auth'
     | '/calculadoras'
     | '/compras'
     | '/dieta'
@@ -156,6 +166,7 @@ export interface FileRouteTypes {
     | '/'
     | '/agua'
     | '/assistente'
+    | '/auth'
     | '/calculadoras'
     | '/compras'
     | '/dieta'
@@ -171,6 +182,7 @@ export interface FileRouteTypes {
     | '/'
     | '/agua'
     | '/assistente'
+    | '/auth'
     | '/calculadoras'
     | '/compras'
     | '/dieta'
@@ -187,6 +199,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AguaRoute: typeof AguaRoute
   AssistenteRoute: typeof AssistenteRoute
+  AuthRoute: typeof AuthRoute
   CalculadorasRoute: typeof CalculadorasRoute
   ComprasRoute: typeof ComprasRoute
   DietaRoute: typeof DietaRoute
@@ -220,6 +233,13 @@ declare module '@tanstack/react-router' {
       path: '/assistente'
       fullPath: '/assistente'
       preLoaderRoute: typeof AssistenteRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/auth': {
+      id: '/auth'
+      path: '/auth'
+      fullPath: '/auth'
+      preLoaderRoute: typeof AuthRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/calculadoras': {
@@ -299,6 +319,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AguaRoute: AguaRoute,
   AssistenteRoute: AssistenteRoute,
+  AuthRoute: AuthRoute,
   CalculadorasRoute: CalculadorasRoute,
   ComprasRoute: ComprasRoute,
   DietaRoute: DietaRoute,
