@@ -12,14 +12,17 @@ export const getCloudState = createServerFn({ method: "GET" })
       .maybeSingle();
 
     if (error) throw new Error(error.message);
-    if (!data) return { state: null as unknown, updatedAt: null as string | null };
-    return { state: data.data as unknown, updatedAt: data.updated_at as string };
+    if (!data) return { state: null as Record<string, unknown> | null, updatedAt: null as string | null };
+    return {
+      state: data.data as Record<string, unknown> | null,
+      updatedAt: data.updated_at as string | null,
+    };
   });
 
 /** Salva (upsert) o estado completo do app do usuário autenticado. */
 export const saveCloudState = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { state: unknown }) => {
+  .inputValidator((input: { state: Record<string, unknown> }) => {
     if (!input || typeof input !== "object" || typeof input.state !== "object" || input.state === null) {
       throw new Error("Estado inválido");
     }
