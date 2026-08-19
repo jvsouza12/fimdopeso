@@ -140,10 +140,10 @@ function AssistentePage() {
             className={
               m.role === "user"
                 ? "ml-auto max-w-[85%] rounded-2xl rounded-br-sm bg-primary px-4 py-2.5 text-sm text-primary-foreground"
-                : "mr-auto max-w-[85%] rounded-2xl rounded-bl-sm bg-surface-2 px-4 py-2.5 text-sm"
+                : "mr-auto max-w-[85%] whitespace-pre-line rounded-2xl rounded-bl-sm bg-surface-2 px-4 py-2.5 text-sm"
             }
           >
-            {m.text}
+            {m.role === "user" ? m.text : formatReply(m.text)}
           </div>
         ))}
       </div>
