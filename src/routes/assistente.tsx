@@ -140,10 +140,10 @@ function AssistentePage() {
             className={
               m.role === "user"
                 ? "ml-auto max-w-[85%] rounded-2xl rounded-br-sm bg-primary px-4 py-2.5 text-sm text-primary-foreground"
-                : "mr-auto max-w-[85%] rounded-2xl rounded-bl-sm bg-surface-2 px-4 py-2.5 text-sm"
+                : "mr-auto max-w-[85%] whitespace-pre-line rounded-2xl rounded-bl-sm bg-surface-2 px-4 py-2.5 text-sm"
             }
           >
-            {m.text}
+            {m.role === "user" ? m.text : formatReply(m.text)}
           </div>
         ))}
       </div>
@@ -189,4 +189,15 @@ function AssistentePage() {
       </p>
     </div>
   );
+}
+
+/** Converte a resposta da IA (markdown simples) em texto limpo e legível. */
+function formatReply(text: string) {
+  return text
+    .replace(/\*\*(.+?)\*\*/g, "$1")
+    .replace(/^\s*[*-]\s+/gm, "• ")
+    .replace(/\s\*\s+/g, "\n• ")
+    .replace(/#{1,6}\s*/g, "")
+    .replace(/\n{3,}/g, "\n\n")
+    .trim();
 }

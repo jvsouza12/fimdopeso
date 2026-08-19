@@ -218,7 +218,7 @@ function PerfilPage() {
           <Trash2 className="size-4" /> Apagar todos os dados
         </Button>
         <p className="text-xs text-muted-foreground">
-          Seus dados ficam salvos neste dispositivo e funcionam offline.
+          Seus dados funcionam offline neste aparelho e, com a conta conectada, são sincronizados na nuvem.
         </p>
       </section>
     </div>
