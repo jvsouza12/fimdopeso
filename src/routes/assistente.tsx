@@ -190,3 +190,14 @@ function AssistentePage() {
     </div>
   );
 }
+
+/** Converte a resposta da IA (markdown simples) em texto limpo e legível. */
+function formatReply(text: string) {
+  return text
+    .replace(/\*\*(.+?)\*\*/g, "$1")
+    .replace(/^\s*[*-]\s+/gm, "• ")
+    .replace(/\s\*\s+/g, "\n• ")
+    .replace(/#{1,6}\s*/g, "")
+    .replace(/\n{3,}/g, "\n\n")
+    .trim();
+}
