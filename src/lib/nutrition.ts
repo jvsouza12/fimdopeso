@@ -63,8 +63,12 @@ export function computeTargets(p: Profile): Targets {
   const fat = Math.round((kcal * 0.27) / 9);
   const carbs = Math.max(0, Math.round((kcal - protein * 4 - fat * 9) / 4));
   const water = Math.round((p.weight * 35) / 50) * 50;
+  // Fibra: 14 g a cada 1000 kcal (referência DRI), limitada a 20–45 g
+  const fiber = Math.min(45, Math.max(20, Math.round((kcal / 1000) * 14)));
+  const sodium = 2000; // mg/dia (referência OMS)
+  const sugar = Math.round((kcal * 0.1) / 4); // até 10% das calorias
 
-  return { kcal, protein, carbs, fat, water };
+  return { kcal, protein, carbs, fat, water, fiber, sodium, sugar };
 }
 
 export function scaleFood(food: Food, amount: number) {
@@ -75,6 +79,9 @@ export function scaleFood(food: Food, amount: number) {
     carbs: food.carbs * f,
     fat: food.fat * f,
     fiber: food.fiber * f,
+    sugar: (food.sugar ?? 0) * f,
+    sodium: (food.sodium ?? 0) * f,
+    satFat: (food.satFat ?? 0) * f,
   };
 }
 
