@@ -31,6 +31,13 @@ export const initialState: AppState = {
       fasting: false,
       daily: true,
     },
+    reminders: {
+      waterEveryMin: 120,
+      mealTimes: ["08:00", "12:30", "16:00", "20:00"],
+      dailyTime: "21:00",
+      weightWeekday: 1,
+    },
+    autoAdjust: true,
   },
 };
 
@@ -46,7 +53,16 @@ interface Ctx {
     recipeId?: string;
     name?: string;
     amount: number;
-    macros?: { kcal: number; protein: number; carbs: number; fat: number; fiber: number };
+    macros?: {
+      kcal: number;
+      protein: number;
+      carbs: number;
+      fat: number;
+      fiber: number;
+      sugar?: number;
+      sodium?: number;
+      satFat?: number;
+    };
     date?: string;
   }) => void;
 }
@@ -60,7 +76,14 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     try {
       const raw = localStorage.getItem(KEY);
-      if (raw) setState({ ...initialState, ...(JSON.parse(raw) as AppState) });
+      if (raw) {
+        const saved = JSON.parse(raw) as AppState;
+        setState({
+          ...initialState,
+          ...saved,
+          settings: { ...initialState.settings, ...(saved.settings ?? {}) },
+        });
+      }
     } catch {
       /* ignora dados corrompidos */
     }
@@ -132,8 +155,11 @@ export function useDayTotals(date = todayKey()) {
         carbs: acc.carbs + l.carbs,
         fat: acc.fat + l.fat,
         fiber: acc.fiber + l.fiber,
+        sugar: acc.sugar + (l.sugar ?? 0),
+        sodium: acc.sodium + (l.sodium ?? 0),
+        satFat: acc.satFat + (l.satFat ?? 0),
       }),
-      { kcal: 0, protein: 0, carbs: 0, fat: 0, fiber: 0 },
+      { kcal: 0, protein: 0, carbs: 0, fat: 0, fiber: 0, sugar: 0, sodium: 0, satFat: 0 },
     );
   }, [state.logs, date]);
 }
