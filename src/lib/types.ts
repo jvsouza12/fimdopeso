@@ -15,6 +15,13 @@ export interface Food {
   carbs: number;
   fat: number;
   fiber: number;
+  /** micronutrientes opcionais (por `portion`) */
+  sugar?: number | undefined;
+  sodium?: number | undefined; // mg
+  satFat?: number | undefined;
+  brand?: string | undefined;
+  barcode?: string | undefined;
+  source?: "local" | "custom" | "off" | "ai" | undefined;
   custom?: boolean | undefined;
 }
 
@@ -43,6 +50,9 @@ export interface LogEntry {
   carbs: number;
   fat: number;
   fiber: number;
+  sugar?: number | undefined;
+  sodium?: number | undefined;
+  satFat?: number | undefined;
 }
 
 export interface PlanEntry {
@@ -120,12 +130,29 @@ export interface Targets {
   carbs: number;
   fat: number;
   water: number; // ml
+  fiber?: number | undefined;
+  sodium?: number | undefined; // mg (limite diário)
+  sugar?: number | undefined; // g (limite diário)
   manual?: boolean | undefined;
+}
+
+export interface Reminders {
+  /** intervalo em minutos para o lembrete de água */
+  waterEveryMin: number;
+  /** horários "HH:MM" das refeições */
+  mealTimes: string[];
+  /** horário do resumo diário */
+  dailyTime: string;
+  /** 0 = domingo ... 6 = sábado */
+  weightWeekday: number;
 }
 
 export interface Settings {
   theme: "light" | "dark";
   notifications: Record<string, boolean>;
+  reminders?: Reminders | undefined;
+  /** ajuste automático de metas conforme a evolução real do peso */
+  autoAdjust?: boolean | undefined;
 }
 
 export interface AppState {
