@@ -1,12 +1,48 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { useServerFn } from "@tanstack/react-start";
 import { getCloudState, saveCloudState } from "@/lib/sync.functions";
 import { useStore, initialState } from "@/lib/store";
 import { useSession } from "@/hooks/useSession";
 import type { AppState } from "@/lib/types";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 type Status = "offline" | "loading" | "synced" | "saving" | "error";
+
+const META_KEY = "nutriplan.sync.meta";
+
+interface SyncMeta {
+  userId: string;
+  /** updated_at do último estado que este aparelho baixou/enviou */
+  remoteUpdatedAt: string | null;
+  /** snapshot enviado pela última vez */
+  savedHash: string;
+}
+
+function loadMeta(): SyncMeta | null {
+  try {
+    return JSON.parse(localStorage.getItem(META_KEY) ?? "null") as SyncMeta | null;
+  } catch {
+    return null;
+  }
+}
+
+function saveMeta(meta: SyncMeta) {
+  try {
+    localStorage.setItem(META_KEY, JSON.stringify(meta));
+  } catch {
+    /* quota */
+  }
+}
 
 let currentStatus: Status = "offline";
 const listeners = new Set<(s: Status) => void>();
@@ -40,10 +76,51 @@ function hasContent(s: AppState | null): boolean {
   );
 }
 
+function summarize(s: AppState | null) {
+  if (!s) return "sem dados";
+  const parts = [
+    `${s.logs?.length ?? 0} registros`,
+    `${s.weights?.length ?? 0} pesagens`,
+    `${s.recipes?.length ?? 0} receitas`,
+  ];
+  return parts.join(" · ");
+}
+
+/** Junta os dois lados sem perder informação: une listas por id e mantém o perfil mais recente. */
+function mergeStates(local: AppState, remote: AppState): AppState {
+  const byId = <T extends { id: string }>(a: T[] = [], b: T[] = []) => {
+    const map = new Map<string, T>();
+    [...b, ...a].forEach((item) => map.set(item.id, item));
+    return [...map.values()];
+  };
+
+  const water = new Map<string, { date: string; ml: number }>();
+  [...(remote.water ?? []), ...(local.water ?? [])].forEach((w) => {
+    const prev = water.get(w.date);
+    water.set(w.date, prev && prev.ml > w.ml ? prev : w);
+  });
+
+  return {
+    ...remote,
+    ...local,
+    logs: byId(local.logs, remote.logs),
+    weights: byId(local.weights, remote.weights),
+    measures: byId(local.measures, remote.measures),
+    recipes: byId(local.recipes, remote.recipes),
+    customFoods: byId(local.customFoods, remote.customFoods),
+    plan: byId(local.plan, remote.plan),
+    fasts: byId(local.fasts, remote.fasts),
+    goals: byId(local.goals, remote.goals),
+    shopping: byId(local.shopping, remote.shopping),
+    favorites: [...new Set([...(local.favorites ?? []), ...(remote.favorites ?? [])])],
+    water: [...water.values()],
+    settings: local.settings ?? remote.settings,
+  };
+}
+
 /**
- * Mantém o estado local e a nuvem em sincronia:
- * - ao entrar, baixa os dados da conta (ou envia os dados locais na primeira vez);
- * - depois, salva automaticamente cada alteração (com atraso curto).
+ * Mantém o estado local e a nuvem em sincronia e, quando os dois lados mudaram
+ * desde a última sincronização, pergunta ao usuário o que fazer.
  */
 export function CloudSync() {
   const { state, hydrated, update } = useStore();
@@ -56,6 +133,33 @@ export function CloudSync() {
   const loadedFor = useRef<string | null>(null);
   const lastSaved = useRef<string>("");
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const stateRef = useRef(state);
+  stateRef.current = state;
+
+  const [conflict, setConflict] = useState<{ remote: AppState; local: AppState; updatedAt: string | null } | null>(
+    null,
+  );
+
+  const applyState = useCallback(
+    (next: AppState, updatedAt: string | null, uid: string) => {
+      const merged = { ...initialState, ...next };
+      update(() => merged);
+      const payload = JSON.stringify(merged);
+      lastSaved.current = payload;
+      saveMeta({ userId: uid, remoteUpdatedAt: updatedAt, savedHash: payload });
+    },
+    [update],
+  );
+
+  const push = useCallback(
+    async (next: AppState, uid: string) => {
+      const payload = JSON.stringify(next);
+      const res = await saveCloud({ data: { state: payload } });
+      lastSaved.current = payload;
+      saveMeta({ userId: uid, remoteUpdatedAt: res.savedAt ?? null, savedHash: payload });
+    },
+    [saveCloud],
+  );
 
   // Carga inicial ao entrar na conta
   useEffect(() => {
@@ -75,16 +179,29 @@ export function CloudSync() {
         const res = await loadCloud();
         if (cancelled) return;
         const remote = res.state ? (JSON.parse(res.state) as AppState) : null;
+        const local = stateRef.current;
+        const meta = loadMeta();
+        const knownRemote = meta && meta.userId === userId ? meta.remoteUpdatedAt : null;
+        const localChanged = !meta || meta.userId !== userId || meta.savedHash !== JSON.stringify(local);
+        const remoteChanged = res.updatedAt !== knownRemote;
 
-        if (hasContent(remote)) {
-          update(() => ({ ...initialState, ...(remote as AppState) }));
-          lastSaved.current = JSON.stringify({ ...initialState, ...(remote as AppState) });
-          toast.success("Dados da sua conta carregados");
+        if (!hasContent(remote)) {
+          await push(local, userId);
+          if (hasContent(local)) toast.success("Seus dados deste aparelho foram salvos na conta");
+        } else if (hasContent(local) && localChanged && remoteChanged && knownRemote !== null) {
+          // Os dois lados mudaram: o usuário decide.
+          setConflict({ remote: remote!, local, updatedAt: res.updatedAt });
+          setStatus("error");
+          return;
+        } else if (localChanged && knownRemote === null && hasContent(local)) {
+          // Primeiro login neste aparelho com dados dos dois lados: juntamos tudo.
+          const merged = mergeStates(local, remote!);
+          applyState(merged, res.updatedAt, userId);
+          await push(merged, userId);
+          toast.success("Dados do aparelho e da conta foram unidos");
         } else {
-          const payload = JSON.stringify(state);
-          await saveCloud({ data: { state: payload } });
-          lastSaved.current = payload;
-          if (hasContent(state)) toast.success("Seus dados deste aparelho foram salvos na conta");
+          applyState(remote!, res.updatedAt, userId);
+          toast.success("Dados da sua conta carregados");
         }
         setStatus("synced");
       } catch (err) {
@@ -99,12 +216,12 @@ export function CloudSync() {
     return () => {
       cancelled = true;
     };
-  }, [userId, hydrated, loadCloud, saveCloud, update, state]);
+  }, [userId, hydrated, loadCloud, push, applyState]);
 
   // Salvamento automático com debounce
   useEffect(() => {
     if (!hydrated || !userId || loadedFor.current !== userId) return;
-    if (currentStatus === "loading") return;
+    if (currentStatus === "loading" || conflict) return;
     const payload = JSON.stringify(state);
     if (payload === lastSaved.current) return;
 
@@ -112,8 +229,7 @@ export function CloudSync() {
     timer.current = setTimeout(async () => {
       try {
         setStatus("saving");
-        await saveCloud({ data: { state: payload } });
-        lastSaved.current = payload;
+        await push(state, userId);
         setStatus("synced");
       } catch (err) {
         console.error(err);
@@ -124,7 +240,53 @@ export function CloudSync() {
     return () => {
       if (timer.current) clearTimeout(timer.current);
     };
-  }, [state, hydrated, userId, saveCloud]);
+  }, [state, hydrated, userId, push, conflict]);
 
-  return null;
+  const resolve = async (choice: "merge" | "cloud" | "device") => {
+    if (!conflict || !userId) return;
+    const next =
+      choice === "cloud"
+        ? conflict.remote
+        : choice === "device"
+          ? conflict.local
+          : mergeStates(conflict.local, conflict.remote);
+    setConflict(null);
+    setStatus("saving");
+    try {
+      applyState(next, conflict.updatedAt, userId);
+      await push({ ...initialState, ...next }, userId);
+      setStatus("synced");
+      toast.success("Dados sincronizados");
+    } catch {
+      setStatus("error");
+      toast.error("Não foi possível salvar agora.");
+    }
+  };
+
+  return (
+    <AlertDialog open={Boolean(conflict)}>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>Seus dados mudaram em dois lugares</AlertDialogTitle>
+          <AlertDialogDescription>
+            Neste aparelho: {summarize(conflict?.local ?? null)}.
+            <br />
+            Na sua conta: {summarize(conflict?.remote ?? null)}.
+            <br />O que você quer manter?
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter className="flex-col gap-2 sm:flex-col">
+          <AlertDialogAction className="w-full" onClick={() => void resolve("merge")}>
+            Juntar tudo (recomendado)
+          </AlertDialogAction>
+          <AlertDialogAction className="w-full" onClick={() => void resolve("cloud")}>
+            Usar os dados da conta
+          </AlertDialogAction>
+          <AlertDialogCancel className="w-full" onClick={() => void resolve("device")}>
+            Usar os dados deste aparelho
+          </AlertDialogCancel>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+  );
 }
