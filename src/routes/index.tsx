@@ -170,7 +170,17 @@ function Dashboard() {
           </Button>
         </div>
 
-        <div className="space-y-3">
+        {logsToday.length === 0 ? (
+          <EmptyState
+            icon={<UtensilsCrossed className="size-5" />}
+            title="Nada registrado hoje"
+            description="Adicione sua primeira refeição pela busca, pela foto do prato ou pelo código de barras do produto."
+            actionLabel="Registrar refeição"
+            to="/registrar"
+          />
+        ) : null}
+
+        <div className="mt-3 space-y-3">
           {MEALS.map((meal) => {
             const items = logsToday.filter((l) => l.meal === meal);
             const sum = items.reduce(
