@@ -162,7 +162,31 @@ function PerfilPage() {
               onChange={(e) => setT((p) => ({ ...p, water: Math.max(0, +e.target.value), manual: true }))}
             />
           </div>
+          {(
+            [
+              ["fiber", "Fibras (g)"],
+              ["sugar", "Açúcar (g)"],
+              ["sodium", "Sódio (mg)"],
+            ] as const
+          ).map(([k, l]) => (
+            <div key={k} className="space-y-2">
+              <Label>{l}</Label>
+              <Input
+                type="number"
+                value={t[k] ?? 0}
+                onChange={(e) => setT((p) => ({ ...p, [k]: Math.max(0, +e.target.value), manual: true }))}
+              />
+            </div>
+          ))}
         </div>
+
+        <AdaptiveCard
+          onApply={(next) => {
+            setT(next);
+            update((d) => ({ ...d, targets: next }));
+            toast.success("Metas ajustadas conforme sua evolução");
+          }}
+        />
         <p className="text-xs text-muted-foreground">
           Você pode ajustar manualmente. As estimativas são referências e não substituem avaliação profissional.
         </p>
