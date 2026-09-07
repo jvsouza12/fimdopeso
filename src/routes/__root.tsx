@@ -15,6 +15,7 @@ import { StoreProvider } from "@/lib/store";
 import { Gate } from "@/components/app/Gate";
 import { Toaster } from "@/components/ui/sonner";
 import { CloudSync } from "@/lib/cloud-sync";
+import { Reminders } from "@/components/app/Reminders";
 
 function NotFoundComponent() {
   return (
@@ -126,6 +127,7 @@ function RootComponent() {
     <QueryClientProvider client={queryClient}>
       <StoreProvider>
         <CloudSync />
+        <Reminders />
         <Gate>
           {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
           <Outlet />

@@ -8,11 +8,14 @@ import { Switch } from "@/components/ui/switch";
 import { useStore } from "@/lib/store";
 import { useProfile } from "@/components/app/Gate";
 import { ACTIVITY_LABELS, GOAL_LABELS, computeTargets } from "@/lib/nutrition";
-import type { ActivityLevel, Goal } from "@/lib/types";
+import type { ActivityLevel, Goal, Targets } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
-import { Download, RefreshCw, Trash2 } from "lucide-react";
+import { BellRing, Download, RefreshCw, Sparkles, Trash2 } from "lucide-react";
 import { AccountSection } from "@/components/app/AccountSection";
+import { adaptiveSuggestion } from "@/lib/adaptive";
+import { DEFAULT_REMINDERS, notificationPermission, requestNotificationPermission } from "@/lib/notifications";
+import { WEEKDAYS } from "@/lib/date";
 
 export const Route = createFileRoute("/perfil")({
   head: () => ({
@@ -162,7 +165,31 @@ function PerfilPage() {
               onChange={(e) => setT((p) => ({ ...p, water: Math.max(0, +e.target.value), manual: true }))}
             />
           </div>
+          {(
+            [
+              ["fiber", "Fibras (g)"],
+              ["sugar", "Açúcar (g)"],
+              ["sodium", "Sódio (mg)"],
+            ] as const
+          ).map(([k, l]) => (
+            <div key={k} className="space-y-2">
+              <Label>{l}</Label>
+              <Input
+                type="number"
+                value={t[k] ?? 0}
+                onChange={(e) => setT((p) => ({ ...p, [k]: Math.max(0, +e.target.value), manual: true }))}
+              />
+            </div>
+          ))}
         </div>
+
+        <AdaptiveCard
+          onApply={(next) => {
+            setT(next);
+            update((d) => ({ ...d, targets: next }));
+            toast.success("Metas ajustadas conforme sua evolução");
+          }}
+        />
         <p className="text-xs text-muted-foreground">
           Você pode ajustar manualmente. As estimativas são referências e não substituem avaliação profissional.
         </p>
@@ -171,23 +198,7 @@ function PerfilPage() {
         </Button>
       </section>
 
-      <section className="card-surface space-y-3 p-4">
-        <p className="font-semibold">Notificações</p>
-        {NOTIFICATIONS.map(([k, l]) => (
-          <div key={k} className="flex items-center justify-between">
-            <span className="text-sm">{l}</span>
-            <Switch
-              checked={state.settings.notifications[k] ?? false}
-              onCheckedChange={(v) =>
-                update((d) => ({
-                  ...d,
-                  settings: { ...d.settings, notifications: { ...d.settings.notifications, [k]: v } },
-                }))
-              }
-            />
-          </div>
-        ))}
-      </section>
+      <RemindersSection />
 
       <AccountSection />
 
@@ -236,5 +247,167 @@ function Pill({ active, onClick, children }: { active: boolean; onClick: () => v
     >
       {children}
     </button>
+  );
+}
+
+/** Sugere ajustar as calorias quando a evolução real difere do ritmo esperado. */
+function AdaptiveCard({ onApply }: { onApply: (next: Targets) => void }) {
+  const { state, update } = useStore();
+  const suggestion = adaptiveSuggestion(state);
+  const enabled = state.settings.autoAdjust ?? true;
+
+  return (
+    <div className="rounded-2xl border border-border bg-surface-2 p-4">
+      <div className="flex items-center justify-between gap-3">
+        <div>
+          <p className="flex items-center gap-2 text-sm font-semibold">
+            <Sparkles className="size-4 text-primary" /> Ajuste automático
+          </p>
+          <p className="mt-1 text-xs text-muted-foreground">
+            Compara sua evolução real com o ritmo planejado a cada nova pesagem.
+          </p>
+        </div>
+        <Switch
+          checked={enabled}
+          aria-label="Ativar ajuste automático de metas"
+          onCheckedChange={(v) => update((d) => ({ ...d, settings: { ...d.settings, autoAdjust: v } }))}
+        />
+      </div>
+
+      {enabled ? (
+        suggestion ? (
+          <div className="mt-3 space-y-3">
+            <p className="text-sm">{suggestion.message}</p>
+            <div className="grid grid-cols-3 gap-2 text-center">
+              {[
+                ["Real", `${suggestion.actualRate > 0 ? "+" : ""}${suggestion.actualRate.toFixed(2)} kg/sem`],
+                ["Esperado", `${suggestion.expectedRate > 0 ? "+" : ""}${suggestion.expectedRate.toFixed(2)} kg/sem`],
+                ["Sugestão", `${suggestion.deltaKcal > 0 ? "+" : ""}${suggestion.deltaKcal} kcal`],
+              ].map(([l, v]) => (
+                <div key={l} className="rounded-xl bg-surface p-2">
+                  <p className="text-[11px] text-muted-foreground">{l}</p>
+                  <p className="text-sm font-semibold tabular-nums">{v}</p>
+                </div>
+              ))}
+            </div>
+            {suggestion.deltaKcal !== 0 ? (
+              <Button size="sm" className="w-full" onClick={() => onApply(suggestion.suggested)}>
+                Aplicar {suggestion.suggested.kcal} kcal por dia
+              </Button>
+            ) : null}
+          </div>
+        ) : (
+          <p className="mt-3 text-xs text-muted-foreground">
+            Registre seu peso por pelo menos 10 dias para receber uma sugestão de ajuste.
+          </p>
+        )
+      ) : null}
+    </div>
+  );
+}
+
+/** Configura os lembretes e pede permissão para enviar avisos. */
+function RemindersSection() {
+  const { state, update } = useStore();
+  const reminders = { ...DEFAULT_REMINDERS, ...(state.settings.reminders ?? {}) };
+  const [permission, setPermission] = useState<NotificationPermission | "unsupported">(() =>
+    typeof window === "undefined" ? "default" : notificationPermission(),
+  );
+
+  const setReminders = (patch: Partial<typeof reminders>) =>
+    update((d) => ({ ...d, settings: { ...d.settings, reminders: { ...reminders, ...patch } } }));
+
+  return (
+    <section className="card-surface space-y-4 p-4">
+      <div className="flex items-center justify-between gap-3">
+        <p className="font-semibold">Lembretes</p>
+        {permission === "granted" ? (
+          <span className="flex items-center gap-1 text-xs text-success">
+            <BellRing className="size-3.5" /> Ativados
+          </span>
+        ) : permission === "unsupported" ? (
+          <span className="text-xs text-muted-foreground">Indisponível neste navegador</span>
+        ) : (
+          <Button
+            size="sm"
+            variant="secondary"
+            onClick={async () => {
+              const p = await requestNotificationPermission();
+              setPermission(p);
+              if (p === "granted") toast.success("Avisos ativados");
+              else if (p === "denied") toast.error("Você bloqueou os avisos nas configurações do navegador.");
+            }}
+          >
+            <BellRing className="size-4" /> Ativar avisos
+          </Button>
+        )}
+      </div>
+
+      {NOTIFICATIONS.map(([k, l]) => (
+        <div key={k} className="flex items-center justify-between">
+          <span className="text-sm">{l}</span>
+          <Switch
+            checked={state.settings.notifications[k] ?? false}
+            onCheckedChange={(v) =>
+              update((d) => ({
+                ...d,
+                settings: { ...d.settings, notifications: { ...d.settings.notifications, [k]: v } },
+              }))
+            }
+          />
+        </div>
+      ))}
+
+      <div className="grid gap-3 border-t border-border pt-4 sm:grid-cols-2">
+        <div className="space-y-2">
+          <Label>Beber água a cada (minutos)</Label>
+          <Input
+            type="number"
+            min={30}
+            max={480}
+            step={15}
+            value={reminders.waterEveryMin}
+            onChange={(e) => setReminders({ waterEveryMin: Math.min(480, Math.max(30, +e.target.value)) })}
+          />
+        </div>
+        <div className="space-y-2">
+          <Label>Resumo do dia às</Label>
+          <Input type="time" value={reminders.dailyTime} onChange={(e) => setReminders({ dailyTime: e.target.value })} />
+        </div>
+        <div className="space-y-2">
+          <Label>Dia de se pesar</Label>
+          <div className="flex flex-wrap gap-1.5">
+            {WEEKDAYS.map((d, i) => (
+              <Pill key={d} active={reminders.weightWeekday === i} onClick={() => setReminders({ weightWeekday: i })}>
+                {d}
+              </Pill>
+            ))}
+          </div>
+        </div>
+        <div className="space-y-2">
+          <Label>Horários das refeições</Label>
+          <div className="flex flex-wrap gap-2">
+            {reminders.mealTimes.map((time, i) => (
+              <Input
+                key={i}
+                type="time"
+                aria-label={`Horário da refeição ${i + 1}`}
+                className="w-32"
+                value={time}
+                onChange={(e) => {
+                  const next = [...reminders.mealTimes];
+                  next[i] = e.target.value;
+                  setReminders({ mealTimes: next });
+                }}
+              />
+            ))}
+          </div>
+        </div>
+      </div>
+
+      <p className="text-xs text-muted-foreground">
+        Os avisos chegam enquanto o app estiver aberto em uma aba do navegador.
+      </p>
+    </section>
   );
 }

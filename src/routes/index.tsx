@@ -1,5 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { Flame, Droplets, Plus, Timer, TrendingDown } from "lucide-react";
+import { Flame, Droplets, Plus, Timer, TrendingDown, UtensilsCrossed } from "lucide-react";
+import { EmptyState } from "@/components/app/EmptyState";
 import { useStore, useDayTotals } from "@/lib/store";
 import { useProfile } from "@/components/app/Gate";
 import { Ring, MacroBar } from "@/components/app/Ring";
@@ -12,18 +13,24 @@ import type { MealType } from "@/lib/types";
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "NutriPlan — Seu painel de dieta e evolução" },
+      { title: "NutriPlan — App de dieta, emagrecimento e evolução" },
       {
         name: "description",
         content:
-          "Acompanhe calorias, macronutrientes, água, peso e jejum em um painel simples e moderno de alimentação saudável.",
+          "Monte seu plano alimentar grátis: calorias, macros, fibras, água, jejum e acompanhamento de peso com metas que se ajustam à sua evolução.",
       },
-      { property: "og:title", content: "NutriPlan — Seu painel de dieta e evolução" },
+      { property: "og:title", content: "NutriPlan — App de dieta, emagrecimento e evolução" },
       {
         property: "og:description",
-        content: "Registre refeições em segundos e acompanhe sua evolução com gráficos claros.",
+        content:
+          "Registre refeições por foto ou código de barras e acompanhe seu emagrecimento com gráficos claros.",
+      },
+      {
+        name: "keywords",
+        content: "contador de calorias, dieta, emagrecimento, macros, jejum intermitente, plano alimentar",
       },
     ],
+    links: [{ rel: "canonical", href: "https://fimdopeso.lovable.app/" }],
   }),
   component: Dashboard,
 });
@@ -82,6 +89,38 @@ function Dashboard() {
             </p>
           </div>
         </div>
+
+        <div className="mt-5 grid grid-cols-3 gap-3 border-t border-border pt-4">
+          {(
+            [
+              ["Fibras", totals.fiber, targets.fiber ?? 25, "g", false],
+              ["Açúcar", totals.sugar ?? 0, targets.sugar ?? 50, "g", true],
+              ["Sódio", totals.sodium ?? 0, targets.sodium ?? 2000, "mg", true],
+            ] as const
+          ).map(([label, value, max, unit, isLimit]) => {
+            const pct = Math.min(100, (value / (max || 1)) * 100);
+            const over = value > max;
+            return (
+              <div key={label} className="rounded-xl bg-surface-2 p-3">
+                <p className="text-[11px] text-muted-foreground">
+                  {label} {isLimit ? "(limite)" : ""}
+                </p>
+                <p className="mt-0.5 text-sm font-semibold tabular-nums">
+                  {round(value)}
+                  <span className="text-xs font-normal text-muted-foreground">
+                    /{round(max)} {unit}
+                  </span>
+                </p>
+                <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-muted">
+                  <div
+                    className={`h-full rounded-full ${over && isLimit ? "bg-destructive" : "bg-primary"}`}
+                    style={{ width: `${pct}%` }}
+                  />
+                </div>
+              </div>
+            );
+          })}
+        </div>
       </section>
 
       <section className="grid gap-4 sm:grid-cols-3">
@@ -132,7 +171,17 @@ function Dashboard() {
           </Button>
         </div>
 
-        <div className="space-y-3">
+        {logsToday.length === 0 ? (
+          <EmptyState
+            icon={<UtensilsCrossed className="size-5" />}
+            title="Nada registrado hoje"
+            description="Adicione sua primeira refeição pela busca, pela foto do prato ou pelo código de barras do produto."
+            actionLabel="Registrar refeição"
+            to="/registrar"
+          />
+        ) : null}
+
+        <div className="mt-3 space-y-3">
           {MEALS.map((meal) => {
             const items = logsToday.filter((l) => l.meal === meal);
             const sum = items.reduce(
