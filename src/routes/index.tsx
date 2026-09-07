@@ -12,18 +12,24 @@ import type { MealType } from "@/lib/types";
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "NutriPlan — Seu painel de dieta e evolução" },
+      { title: "NutriPlan — App de dieta, emagrecimento e evolução" },
       {
         name: "description",
         content:
-          "Acompanhe calorias, macronutrientes, água, peso e jejum em um painel simples e moderno de alimentação saudável.",
+          "Monte seu plano alimentar grátis: calorias, macros, fibras, água, jejum e acompanhamento de peso com metas que se ajustam à sua evolução.",
       },
-      { property: "og:title", content: "NutriPlan — Seu painel de dieta e evolução" },
+      { property: "og:title", content: "NutriPlan — App de dieta, emagrecimento e evolução" },
       {
         property: "og:description",
-        content: "Registre refeições em segundos e acompanhe sua evolução com gráficos claros.",
+        content:
+          "Registre refeições por foto ou código de barras e acompanhe seu emagrecimento com gráficos claros.",
+      },
+      {
+        name: "keywords",
+        content: "contador de calorias, dieta, emagrecimento, macros, jejum intermitente, plano alimentar",
       },
     ],
+    links: [{ rel: "canonical", href: "https://fimdopeso.lovable.app/" }],
   }),
   component: Dashboard,
 });
