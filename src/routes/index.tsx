@@ -1,5 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { Flame, Droplets, Plus, Timer, TrendingDown } from "lucide-react";
+import { Flame, Droplets, Plus, Timer, TrendingDown, UtensilsCrossed } from "lucide-react";
+import { EmptyState } from "@/components/app/EmptyState";
 import { useStore, useDayTotals } from "@/lib/store";
 import { useProfile } from "@/components/app/Gate";
 import { Ring, MacroBar } from "@/components/app/Ring";
