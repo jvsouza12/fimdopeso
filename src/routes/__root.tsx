@@ -15,6 +15,7 @@ import { StoreProvider } from "@/lib/store";
 import { Gate } from "@/components/app/Gate";
 import { Toaster } from "@/components/ui/sonner";
 import { CloudSync } from "@/lib/cloud-sync";
+import { Reminders } from "@/components/app/Reminders";
 
 function NotFoundComponent() {
   return (
