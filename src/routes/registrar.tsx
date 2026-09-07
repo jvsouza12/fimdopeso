@@ -61,14 +61,29 @@ function RegistrarPage() {
       </div>
 
       <Tabs defaultValue="buscar">
-        <TabsList className="w-full">
+        <TabsList className="w-full overflow-x-auto">
           <TabsTrigger value="buscar" className="flex-1">Buscar</TabsTrigger>
+          <TabsTrigger value="online" className="flex-1">Produtos</TabsTrigger>
+          <TabsTrigger value="codigo" className="flex-1">Código</TabsTrigger>
+          <TabsTrigger value="foto" className="flex-1">Foto</TabsTrigger>
           <TabsTrigger value="receitas" className="flex-1">Receitas</TabsTrigger>
-          <TabsTrigger value="criar" className="flex-1">Criar alimento</TabsTrigger>
+          <TabsTrigger value="criar" className="flex-1">Criar</TabsTrigger>
         </TabsList>
 
         <TabsContent value="buscar" className="mt-4">
           <FoodPicker meal={meal} />
+        </TabsContent>
+
+        <TabsContent value="online" className="mt-4">
+          <OnlineFoods meal={meal} mode="search" />
+        </TabsContent>
+
+        <TabsContent value="codigo" className="mt-4">
+          <OnlineFoods meal={meal} mode="barcode" />
+        </TabsContent>
+
+        <TabsContent value="foto" className="mt-4">
+          <PhotoMeal meal={meal} />
         </TabsContent>
 
         <TabsContent value="receitas" className="mt-4 space-y-3">
