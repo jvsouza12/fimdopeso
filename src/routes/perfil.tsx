@@ -195,23 +195,7 @@ function PerfilPage() {
         </Button>
       </section>
 
-      <section className="card-surface space-y-3 p-4">
-        <p className="font-semibold">Notificações</p>
-        {NOTIFICATIONS.map(([k, l]) => (
-          <div key={k} className="flex items-center justify-between">
-            <span className="text-sm">{l}</span>
-            <Switch
-              checked={state.settings.notifications[k] ?? false}
-              onCheckedChange={(v) =>
-                update((d) => ({
-                  ...d,
-                  settings: { ...d.settings, notifications: { ...d.settings.notifications, [k]: v } },
-                }))
-              }
-            />
-          </div>
-        ))}
-      </section>
+      <RemindersSection />
 
       <AccountSection />
 
