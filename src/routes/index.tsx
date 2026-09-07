@@ -88,6 +88,38 @@ function Dashboard() {
             </p>
           </div>
         </div>
+
+        <div className="mt-5 grid grid-cols-3 gap-3 border-t border-border pt-4">
+          {(
+            [
+              ["Fibras", totals.fiber, targets.fiber ?? 25, "g", false],
+              ["Açúcar", totals.sugar ?? 0, targets.sugar ?? 50, "g", true],
+              ["Sódio", totals.sodium ?? 0, targets.sodium ?? 2000, "mg", true],
+            ] as const
+          ).map(([label, value, max, unit, isLimit]) => {
+            const pct = Math.min(100, (value / (max || 1)) * 100);
+            const over = value > max;
+            return (
+              <div key={label} className="rounded-xl bg-surface-2 p-3">
+                <p className="text-[11px] text-muted-foreground">
+                  {label} {isLimit ? "(limite)" : ""}
+                </p>
+                <p className="mt-0.5 text-sm font-semibold tabular-nums">
+                  {round(value)}
+                  <span className="text-xs font-normal text-muted-foreground">
+                    /{round(max)} {unit}
+                  </span>
+                </p>
+                <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-muted">
+                  <div
+                    className={`h-full rounded-full ${over && isLimit ? "bg-destructive" : "bg-primary"}`}
+                    style={{ width: `${pct}%` }}
+                  />
+                </div>
+              </div>
+            );
+          })}
+        </div>
       </section>
 
       <section className="grid gap-4 sm:grid-cols-3">
