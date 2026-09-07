@@ -3,6 +3,8 @@ import { useState } from "react";
 import { z } from "zod";
 import { PageHeader } from "@/components/app/AppShell";
 import { FoodPicker, MEAL_LABELS } from "@/components/app/FoodPicker";
+import { OnlineFoods } from "@/components/app/OnlineFoods";
+import { PhotoMeal } from "@/components/app/PhotoMeal";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
