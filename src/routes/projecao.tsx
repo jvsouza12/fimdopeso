@@ -46,7 +46,7 @@ function ProjecaoPage() {
       <div className="space-y-6">
         <PageHeader title="Projeção" subtitle="Estimativa do seu peso futuro mantendo o ritmo atual." />
         <EmptyState
-          icon={LineChartIcon}
+          icon={<LineChartIcon className="h-6 w-6" />}
           title="Ainda não dá para projetar"
           description="Registre seu peso em pelo menos dois dias diferentes para o app calcular seu ritmo e estimar o peso futuro."
           actionLabel="Registrar peso"
@@ -129,7 +129,7 @@ function ProjecaoPage() {
               <YAxis domain={["dataMin - 2", "dataMax + 2"]} tick={{ fontSize: 11 }} width={40} />
               <Tooltip
                 contentStyle={{ background: "var(--card)", border: "1px solid var(--border)", borderRadius: 12 }}
-                formatter={(v: number | null, n) => [v === null ? "—" : `${v} kg`, n === "real" ? "Registrado" : "Projeção"]}
+                formatter={(v, n) => [v === null || v === undefined ? "—" : `${v} kg`, n === "real" ? "Registrado" : "Projeção"]}
               />
               <Line type="monotone" dataKey="real" stroke="var(--primary)" strokeWidth={2} dot={{ r: 2 }} connectNulls />
               <Line
