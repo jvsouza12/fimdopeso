@@ -29,7 +29,7 @@ function makeState(weights: { date: string; weight: number }[]): AppState {
     recipes: [],
     logs: [],
     plan: [],
-    weights,
+    weights: weights.map((w, i) => ({ id: `w${i}`, ...w })),
     measures: [],
     water: [],
     fasts: [],
