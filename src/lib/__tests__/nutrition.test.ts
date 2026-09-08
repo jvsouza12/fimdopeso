@@ -15,6 +15,9 @@ const profile: Profile = {
   mealsPerDay: 4,
   preferences: "",
   dislikes: "",
+  restrictions: "",
+  fasting: false,
+  fastingHours: 16,
 };
 
 describe("computeTargets", () => {
@@ -79,8 +82,8 @@ describe("indicadores de saúde", () => {
   it("calcula IMC e faixa", () => {
     expect(bmi(75, 165)).toBeCloseTo(27.5, 1);
     expect(bmiLabel(27.5)).toBeTruthy();
-    const range = idealWeightRange(165);
-    expect(range.min).toBeLessThan(range.max);
+    const [min, max] = idealWeightRange(165);
+    expect(min).toBeLessThan(max);
   });
 
   it("arredonda com casas decimais", () => {
