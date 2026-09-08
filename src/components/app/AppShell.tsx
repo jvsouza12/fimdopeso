@@ -9,6 +9,7 @@ import {
   Timer,
   Target,
   BarChart3,
+  LineChart,
   Calculator,
   ChefHat,
   ShoppingCart,
@@ -29,6 +30,7 @@ const primaryNav = [
 ] as const;
 
 const secondaryNav = [
+  { to: "/projecao", label: "Projeção", icon: LineChart },
   { to: "/agua", label: "Água", icon: Droplets },
   { to: "/jejum", label: "Jejum", icon: Timer },
   { to: "/metas", label: "Metas", icon: Target },

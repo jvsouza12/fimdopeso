@@ -21,6 +21,7 @@ import { Route as EvolucaoRouteImport } from './routes/evolucao'
 import { Route as JejumRouteImport } from './routes/jejum'
 import { Route as MetasRouteImport } from './routes/metas'
 import { Route as PerfilRouteImport } from './routes/perfil'
+import { Route as ProjecaoRouteImport } from './routes/projecao'
 import { Route as ReceitasRouteImport } from './routes/receitas'
 import { Route as RegistrarRouteImport } from './routes/registrar'
 import { Route as RelatoriosRouteImport } from './routes/relatorios'
@@ -86,6 +87,11 @@ const PerfilRoute = PerfilRouteImport.update({
   path: '/perfil',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ProjecaoRoute = ProjecaoRouteImport.update({
+  id: '/projecao',
+  path: '/projecao',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ReceitasRoute = ReceitasRouteImport.update({
   id: '/receitas',
   path: '/receitas',
@@ -120,6 +126,7 @@ export interface FileRoutesByFullPath {
   '/jejum': typeof JejumRoute
   '/metas': typeof MetasRoute
   '/perfil': typeof PerfilRoute
+  '/projecao': typeof ProjecaoRoute
   '/receitas': typeof ReceitasRoute
   '/registrar': typeof RegistrarRoute
   '/relatorios': typeof RelatoriosRoute
@@ -138,6 +145,7 @@ export interface FileRoutesByTo {
   '/jejum': typeof JejumRoute
   '/metas': typeof MetasRoute
   '/perfil': typeof PerfilRoute
+  '/projecao': typeof ProjecaoRoute
   '/receitas': typeof ReceitasRoute
   '/registrar': typeof RegistrarRoute
   '/relatorios': typeof RelatoriosRoute
@@ -157,6 +165,7 @@ export interface FileRoutesById {
   '/jejum': typeof JejumRoute
   '/metas': typeof MetasRoute
   '/perfil': typeof PerfilRoute
+  '/projecao': typeof ProjecaoRoute
   '/receitas': typeof ReceitasRoute
   '/registrar': typeof RegistrarRoute
   '/relatorios': typeof RelatoriosRoute
@@ -177,6 +186,7 @@ export interface FileRouteTypes {
     | '/jejum'
     | '/metas'
     | '/perfil'
+    | '/projecao'
     | '/receitas'
     | '/registrar'
     | '/relatorios'
@@ -195,6 +205,7 @@ export interface FileRouteTypes {
     | '/jejum'
     | '/metas'
     | '/perfil'
+    | '/projecao'
     | '/receitas'
     | '/registrar'
     | '/relatorios'
@@ -213,6 +224,7 @@ export interface FileRouteTypes {
     | '/jejum'
     | '/metas'
     | '/perfil'
+    | '/projecao'
     | '/receitas'
     | '/registrar'
     | '/relatorios'
@@ -232,6 +244,7 @@ export interface RootRouteChildren {
   JejumRoute: typeof JejumRoute
   MetasRoute: typeof MetasRoute
   PerfilRoute: typeof PerfilRoute
+  ProjecaoRoute: typeof ProjecaoRoute
   ReceitasRoute: typeof ReceitasRoute
   RegistrarRoute: typeof RegistrarRoute
   RelatoriosRoute: typeof RelatoriosRoute
@@ -324,6 +337,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PerfilRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/projecao': {
+      id: '/projecao'
+      path: '/projecao'
+      fullPath: '/projecao'
+      preLoaderRoute: typeof ProjecaoRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/receitas': {
       id: '/receitas'
       path: '/receitas'
@@ -368,6 +388,7 @@ const rootRouteChildren: RootRouteChildren = {
   JejumRoute: JejumRoute,
   MetasRoute: MetasRoute,
   PerfilRoute: PerfilRoute,
+  ProjecaoRoute: ProjecaoRoute,
   ReceitasRoute: ReceitasRoute,
   RegistrarRoute: RegistrarRoute,
   RelatoriosRoute: RelatoriosRoute,
