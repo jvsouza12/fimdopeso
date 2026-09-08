@@ -9,6 +9,7 @@ import {
   Timer,
   Target,
   BarChart3,
+  LineChart,
   Calculator,
   ChefHat,
   ShoppingCart,
