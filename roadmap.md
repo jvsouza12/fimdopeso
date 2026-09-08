@@ -6,5 +6,5 @@
 - [x] Ajuste automático de calorias pela evolução do peso
 - [x] Resolução de conflitos de sincronização (junta dados ou pergunta ao usuário)
 - [x] Página de apresentação pública em "/"
-- [ ] Testes automatizados (nutrição, ajuste automático, busca de produtos)
+- [x] Testes automatizados (12 testes passando — `bun run test`)
 - [ ] Responder à nova pergunta do usuário: o que mais melhorar no app
