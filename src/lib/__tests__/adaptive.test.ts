@@ -60,7 +60,10 @@ describe("adaptiveSuggestion", () => {
   });
 
   it("sugere aumentar calorias quando a perda está rápida demais", () => {
-    const weights = [70, 71.5, 73, 75].map((w, i) => ({ date: `2026-08-${24 - i * 5}`, weight: w }));
+    const weights = [70, 71.5, 73, 75].map((w, i) => ({
+      date: `2026-08-${String(24 - i * 5).padStart(2, "0")}`,
+      weight: w,
+    }));
     const s = adaptiveSuggestion(makeState(weights));
     expect(s).not.toBeNull();
     expect(s!.deltaKcal).toBeGreaterThan(0);
