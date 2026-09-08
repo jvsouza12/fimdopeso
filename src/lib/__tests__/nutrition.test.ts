@@ -15,7 +15,7 @@ const profile: Profile = {
   mealsPerDay: 4,
   preferences: "",
   dislikes: "",
-  restrictions: "",
+  restrictions: [],
   fasting: false,
   fastingHours: 16,
 };
