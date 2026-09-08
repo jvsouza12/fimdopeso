@@ -94,7 +94,8 @@ export function projectionSeries(
   step = 7,
 ): { date: string; real: number | null; projecao: number | null }[] {
   const sorted = [...weights].sort((a, b) => a.date.localeCompare(b.date));
-  const out = sorted.map((w) => ({ date: w.date, real: w.weight, projecao: null as number | null }));
+  type Point = { date: string; real: number | null; projecao: number | null };
+  const out: Point[] = sorted.map((w) => ({ date: w.date, real: w.weight, projecao: null }));
   const lastReal = out.at(-1);
   if (lastReal) lastReal.projecao = round(p.currentTrend, 1);
 
