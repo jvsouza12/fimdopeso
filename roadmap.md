@@ -1,0 +1,10 @@
+# Roadmap
+
+- [x] Registro por foto do prato, código de barras e busca online de produtos
+- [x] Metas de fibras/sódio/açúcar no painel e no perfil
+- [x] Lembretes de água/refeições/peso com avisos do navegador
+- [x] Ajuste automático de calorias pela evolução do peso
+- [x] Resolução de conflitos de sincronização (junta dados ou pergunta ao usuário)
+- [x] Página de apresentação pública em "/"
+- [x] Testes automatizados (12 testes passando — `bun run test`)
+- [ ] Responder à nova pergunta do usuário: o que mais melhorar no app
