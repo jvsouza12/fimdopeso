@@ -67,7 +67,7 @@ export function Landing() {
             <Link to="/auth">Entrar</Link>
           </Button>
           <Button asChild size="sm">
-            <Link to="/comecar">Começar grátis</Link>
+            <Link to="/auth">Começar grátis</Link>
           </Button>
         </nav>
       </header>
@@ -86,7 +86,7 @@ export function Landing() {
           </p>
           <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
             <Button asChild size="lg" className="w-full sm:w-auto">
-              <Link to="/comecar">
+              <Link to="/auth">
                 Montar meu plano grátis <ArrowRight className="size-4" />
               </Link>
             </Button>
@@ -153,7 +153,7 @@ export function Landing() {
                 qualquer lugar. Você pode exportar ou apagar tudo quando quiser.
               </p>
               <Button asChild size="lg">
-                <Link to="/comecar">
+                <Link to="/auth">
                   Começar agora <ArrowRight className="size-4" />
                 </Link>
               </Button>

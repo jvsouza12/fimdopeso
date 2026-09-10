@@ -7,4 +7,5 @@
 - [x] Resolução de conflitos de sincronização (junta dados ou pergunta ao usuário)
 - [x] Página de apresentação pública em "/"
 - [x] Testes automatizados (12 testes passando — `bun run test`)
-- [ ] Responder à nova pergunta do usuário: o que mais melhorar no app
+- [x] Novo acesso antes do questionário pessoal, com opção de continuar sem conta
+- [x] Redesenho completo da tela de login e cadastro

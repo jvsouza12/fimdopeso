@@ -9,13 +9,15 @@ export const Route = createFileRoute("/comecar")({
       {
         name: "description",
         content:
-          "Responda algumas perguntas rápidas e receba um plano de calorias, macros, fibras e água feito para o seu corpo e objetivo.",
+          "Depois de escolher como acessar, responda algumas perguntas rápidas e receba metas de calorias, macros, fibras e água.",
       },
       { property: "og:title", content: "Montar meu plano — NutriPlan" },
       {
         property: "og:description",
-        content: "Plano de dieta personalizado em menos de dois minutos, grátis e sem cadastro.",
+        content: "Plano de dieta personalizado em menos de dois minutos, com conta sincronizada ou uso local.",
       },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary_large_image" },
     ],
   }),
   component: ComecarPage,
