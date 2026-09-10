@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import { useRouterState } from "@tanstack/react-router";
 import { useStore } from "@/lib/store";
+import type { Profile, Targets } from "@/lib/types";
 import { AppShell } from "./AppShell";
 import { Onboarding } from "./Onboarding";
 import { Landing } from "./Landing";
