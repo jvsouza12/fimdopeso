@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import { useRouterState } from "@tanstack/react-router";
 import { useStore } from "@/lib/store";
+import type { Profile, Targets } from "@/lib/types";
 import { AppShell } from "./AppShell";
 import { Onboarding } from "./Onboarding";
 import { Landing } from "./Landing";
@@ -31,8 +32,41 @@ export function Gate({ children }: { children: ReactNode }) {
   return <AppShell>{children}</AppShell>;
 }
 
+/** Perfil padrão usado só como proteção contra renderizações fora do Gate. */
+const FALLBACK_PROFILE: Profile = {
+  name: "",
+  age: 30,
+  sex: "m",
+  height: 170,
+  weight: 70,
+  targetWeight: 70,
+  activity: "moderate",
+  goal: "maintain",
+  mealsPerDay: 4,
+  restrictions: [],
+  preferences: "",
+  dislikes: "",
+  fasting: false,
+  fastingHours: 16,
+  deadlineWeeks: 12,
+};
+
+const FALLBACK_TARGETS: Targets = {
+  kcal: 2000,
+  protein: 120,
+  carbs: 220,
+  fat: 65,
+  water: 2500,
+  fiber: 25,
+  sodium: 2000,
+  sugar: 50,
+};
+
 /** Helper para páginas que precisam do perfil já definido. */
 export function useProfile() {
   const { state } = useStore();
-  return { profile: state.profile!, targets: state.targets! };
+  return {
+    profile: state.profile ?? FALLBACK_PROFILE,
+    targets: state.targets ?? FALLBACK_TARGETS,
+  };
 }
