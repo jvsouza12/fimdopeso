@@ -48,6 +48,7 @@ function AuthPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [sent, setSent] = useState(false);
+  const [googleLoading, setGoogleLoading] = useState(false);
   const { session } = useSession();
   const { state, hydrated } = useStore();
   const navigate = useNavigate();
