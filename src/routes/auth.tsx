@@ -126,6 +126,25 @@ function AuthPage() {
     else toast.success("Enviamos um link de redefinição para seu e-mail");
   };
 
+  const signInWithGoogle = async () => {
+    setGoogleLoading(true);
+    try {
+      const result = await lovable.auth.signInWithOAuth("google", {
+        redirect_uri: window.location.origin,
+      });
+      if (result.error) {
+        toast.error("Não foi possível entrar com o Google. Tente novamente.");
+        return;
+      }
+      if (result.redirected) return;
+      toast.success("Bem-vindo!");
+    } catch {
+      toast.error("Não foi possível entrar com o Google. Tente novamente.");
+    } finally {
+      setGoogleLoading(false);
+    }
+  };
+
   return (
     <main className="min-h-screen bg-background lg:grid lg:grid-cols-[minmax(0,1.08fr)_minmax(440px,0.92fr)]">
       <section className="relative hidden min-h-screen overflow-hidden lg:block" aria-label="Alimentação saudável">
