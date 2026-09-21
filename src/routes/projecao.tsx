@@ -11,6 +11,7 @@ import { round } from "@/lib/nutrition";
 import { buildProjection, dateForWeight, projectionSeries, weightAt } from "@/lib/projection";
 import { CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { LineChart as LineChartIcon } from "lucide-react";
+import { PremiumGate } from "@/components/app/PremiumGate";
 
 export const Route = createFileRoute("/projecao")({
   head: () => ({
@@ -23,7 +24,14 @@ export const Route = createFileRoute("/projecao")({
       { name: "twitter:card", content: "summary" },
     ],
   }),
-  component: ProjecaoPage,
+  component: () => (
+    <PremiumGate
+      title="Projeção de peso"
+      description="Veja quanto você deve pesar numa data futura mantendo o ritmo atual. Disponível no Premium."
+    >
+      <ProjecaoPage />
+    </PremiumGate>
+  ),
 });
 
 function plusDays(days: number) {
