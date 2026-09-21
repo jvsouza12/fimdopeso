@@ -7,6 +7,7 @@ import { lastNDays, shortDate } from "@/lib/date";
 import { round } from "@/lib/nutrition";
 import { cn } from "@/lib/utils";
 import { Area, AreaChart, Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
+import { PremiumGate } from "@/components/app/PremiumGate";
 
 export const Route = createFileRoute("/relatorios")({
   head: () => ({
@@ -17,7 +18,14 @@ export const Route = createFileRoute("/relatorios")({
       { property: "og:description", content: "Veja médias e tendências da sua alimentação e evolução." },
     ],
   }),
-  component: RelatoriosPage,
+  component: () => (
+    <PremiumGate
+      title="Relatórios completos"
+      description="Médias e tendências de calorias, proteína, água, peso e jejum em 7, 30, 90 dias ou 1 ano. Disponível no Premium."
+    >
+      <RelatoriosPage />
+    </PremiumGate>
+  ),
 });
 
 const RANGES = [

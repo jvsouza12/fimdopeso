@@ -5,6 +5,7 @@ import { PageHeader } from "@/components/app/AppShell";
 import { FoodPicker, MEAL_LABELS } from "@/components/app/FoodPicker";
 import { OnlineFoods } from "@/components/app/OnlineFoods";
 import { PhotoMeal } from "@/components/app/PhotoMeal";
+import { PremiumGate } from "@/components/app/PremiumGate";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -81,11 +82,21 @@ function RegistrarPage() {
         </TabsContent>
 
         <TabsContent value="codigo" className="mt-4">
-          <OnlineFoods meal={meal} mode="barcode" />
+          <PremiumGate
+            title="Código de barras"
+            description="Leia o código de barras do produto e registre a refeição em segundos."
+          >
+            <OnlineFoods meal={meal} mode="barcode" />
+          </PremiumGate>
         </TabsContent>
 
         <TabsContent value="foto" className="mt-4">
-          <PhotoMeal meal={meal} />
+          <PremiumGate
+            title="Foto do prato"
+            description="Tire uma foto da refeição e deixe a IA estimar os alimentos e as calorias."
+          >
+            <PhotoMeal meal={meal} />
+          </PremiumGate>
         </TabsContent>
 
         <TabsContent value="receitas" className="mt-4 space-y-3">

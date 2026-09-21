@@ -11,6 +11,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { assistantChat } from "@/lib/ai.functions";
 import { useSession } from "@/hooks/useSession";
 import { Link } from "@tanstack/react-router";
+import { PremiumGate } from "@/components/app/PremiumGate";
 
 export const Route = createFileRoute("/assistente")({
   head: () => ({
@@ -21,7 +22,14 @@ export const Route = createFileRoute("/assistente")({
       { property: "og:description", content: "Ideias de refeições e encaixes calóricos com base nos seus dados." },
     ],
   }),
-  component: AssistentePage,
+  component: () => (
+    <PremiumGate
+      title="Assistente com IA"
+      description="Converse com o assistente para montar refeições, encaixar calorias e ajustar sua dieta. Disponível no Premium."
+    >
+      <AssistentePage />
+    </PremiumGate>
+  ),
 });
 
 const SUGGESTIONS = [
