@@ -147,12 +147,25 @@ export interface Reminders {
   weightWeekday: number;
 }
 
+export type SubscriptionPlan = "free" | "premium";
+
+export interface Subscription {
+  plan: SubscriptionPlan;
+  cycle?: "monthly" | "yearly" | "trial" | undefined;
+  /** data de início (yyyy-MM-dd) */
+  since?: string | undefined;
+  /** data de expiração do teste grátis (yyyy-MM-dd) */
+  until?: string | undefined;
+  trialUsed?: boolean | undefined;
+}
+
 export interface Settings {
   theme: "light" | "dark";
   notifications: Record<string, boolean>;
   reminders?: Reminders | undefined;
   /** ajuste automático de metas conforme a evolução real do peso */
   autoAdjust?: boolean | undefined;
+  subscription?: Subscription | undefined;
 }
 
 export interface AppState {
