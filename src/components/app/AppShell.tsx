@@ -16,6 +16,7 @@ import {
   Sparkles,
   Moon,
   Sun,
+  Crown,
 } from "lucide-react";
 import type { ReactNode } from "react";
 import { useStore } from "@/lib/store";
@@ -39,6 +40,7 @@ const secondaryNav = [
   { to: "/calculadoras", label: "Calculadoras", icon: Calculator },
   { to: "/compras", label: "Compras", icon: ShoppingCart },
   { to: "/assistente", label: "Assistente", icon: Sparkles },
+  { to: "/premium", label: "Premium", icon: Crown },
 ] as const;
 
 export function AppShell({ children }: { children: ReactNode }) {
