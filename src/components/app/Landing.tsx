@@ -10,7 +10,59 @@ import {
   UtensilsCrossed,
   ShieldCheck,
 } from "lucide-react";
+import { Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import painelShot from "@/assets/landing-painel.webp.asset.json";
+import jejumShot from "@/assets/landing-jejum.webp.asset.json";
+import projecaoShot from "@/assets/landing-projecao.webp.asset.json";
+
+const SHOWCASE = [
+  {
+    icon: UtensilsCrossed,
+    title: "Seu dia inteiro em uma tela",
+    text: "Calorias, proteínas, carboidratos e gorduras com metas feitas para o seu corpo — e quanto ainda falta comer hoje.",
+    points: ["Fibras, açúcar e sódio sob controle", "Água, peso e jejum no mesmo lugar", "Refeições organizadas por horário"],
+    img: painelShot.url,
+    alt: "Painel com anel de calorias e barras de macros",
+  },
+  {
+    icon: Timer,
+    title: "Saiba o que acontece no seu jejum",
+    text: "O cronômetro mostra em qual estágio você está — da digestão à queima de gordura e cetose — e quanto falta para o próximo.",
+    points: ["8 estágios explicados em linguagem simples", "Metas de 12 a 24 horas", "Histórico de todos os jejuns"],
+    img: jejumShot.url,
+    alt: "Tela de jejum com cronômetro em 14 horas no estágio de queima de gordura",
+  },
+  {
+    icon: LineChart,
+    title: "Descubra quando vai chegar na meta",
+    text: "Com base nas suas pesagens, o app calcula seu ritmo e mostra quanto você deve pesar em qualquer data futura.",
+    points: ["Ritmo semanal real", "Data estimada para a meta", "Gráfico do histórico e da projeção"],
+    img: projecaoShot.url,
+    alt: "Gráfico de projeção de peso com linha tracejada até a meta",
+  },
+];
+
+function ScreenFrame({ src, alt, priority }: { src: string; alt: string; priority?: boolean }) {
+  return (
+    <figure className="overflow-hidden rounded-2xl border border-border bg-card shadow-2xl">
+      <div className="flex items-center gap-1.5 border-b border-border px-4 py-2.5" aria-hidden>
+        <span className="size-2.5 rounded-full bg-muted" />
+        <span className="size-2.5 rounded-full bg-muted" />
+        <span className="size-2.5 rounded-full bg-muted" />
+      </div>
+      <img
+        src={src}
+        alt={alt}
+        className="block w-full"
+        width={1300}
+        height={1000}
+        loading={priority ? "eager" : "lazy"}
+      />
+    </figure>
+  );
+}
+
 
 const FEATURES = [
   {
@@ -98,12 +150,17 @@ export function Landing() {
             Funciona sem cadastro e offline. Crie a conta só quando quiser sincronizar entre aparelhos.
           </p>
 
-          <dl className="mx-auto mt-14 grid max-w-3xl grid-cols-2 gap-4 sm:grid-cols-4">
+          <div className="relative mx-auto mt-14 max-w-5xl">
+            <div className="absolute -inset-x-10 -top-10 bottom-10 -z-10 rounded-[3rem] bg-primary/20 blur-3xl" aria-hidden />
+            <ScreenFrame src={painelShot.url} alt="Painel do NutriPlan com calorias, macros, água, peso e jejum do dia" priority />
+          </div>
+
+          <dl className="mx-auto mt-10 grid max-w-3xl grid-cols-2 gap-4 sm:grid-cols-4">
             {[
               ["2 min", "para montar o plano"],
               ["+1.000", "alimentos e produtos"],
-              ["7 telas", "de acompanhamento"],
-              ["100%", "offline no aparelho"],
+              ["8 estágios", "de jejum explicados"],
+              ["100%", "dos dados com você"],
             ].map(([v, l]) => (
               <div key={l} className="card-surface p-4">
                 <dt className="text-2xl font-bold tabular-nums text-primary">{v}</dt>
@@ -111,6 +168,36 @@ export function Landing() {
               </div>
             ))}
           </dl>
+        </section>
+
+        <section className="py-16">
+          <div className="mx-auto max-w-6xl space-y-20 px-5">
+            <div className="text-center">
+              <p className="text-xs font-semibold tracking-widest text-primary uppercase">Veja por dentro</p>
+              <h2 className="mt-2 text-3xl font-bold tracking-tight">Telas reais do app, sem maquiagem</h2>
+            </div>
+            {SHOWCASE.map((s, i) => (
+              <div key={s.title} className="grid items-center gap-8 lg:grid-cols-5 lg:gap-12">
+                <div className={i % 2 ? "lg:order-2 lg:col-span-2" : "lg:col-span-2"}>
+                  <span className="flex size-10 items-center justify-center rounded-xl bg-surface-2 text-primary">
+                    <s.icon className="size-5" />
+                  </span>
+                  <h3 className="mt-4 text-2xl font-bold tracking-tight">{s.title}</h3>
+                  <p className="mt-3 text-muted-foreground">{s.text}</p>
+                  <ul className="mt-5 space-y-2 text-sm">
+                    {s.points.map((p) => (
+                      <li key={p} className="flex gap-2">
+                        <Check className="mt-0.5 size-4 shrink-0 text-primary" /> {p}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+                <div className={i % 2 ? "lg:order-1 lg:col-span-3" : "lg:col-span-3"}>
+                  <ScreenFrame src={s.img} alt={s.alt} />
+                </div>
+              </div>
+            ))}
+          </div>
         </section>
 
         <section className="border-y border-border bg-surface/50 py-16">
