@@ -17,10 +17,13 @@ import {
   Moon,
   Sun,
   Crown,
+  Footprints,
 } from "lucide-react";
 import type { ReactNode } from "react";
 import { useStore } from "@/lib/store";
 import { cn } from "@/lib/utils";
+import { useSession } from "@/hooks/useSession";
+import { Button } from "@/components/ui/button";
 
 const primaryNav = [
   { to: "/", label: "Início", icon: Home },
@@ -45,6 +48,7 @@ const secondaryNav = [
 
 export function AppShell({ children }: { children: ReactNode }) {
   const { state, update } = useStore();
+  const { session } = useSession();
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const dark = state.settings.theme === "dark";
 
@@ -70,6 +74,7 @@ export function AppShell({ children }: { children: ReactNode }) {
           {secondaryNav.map((item) => (
             <NavItem key={item.to} {...item} active={pathname === item.to} />
           ))}
+          {session && <NavItem to="/caminhada" label="Caminhada" icon={Footprints} active={pathname === "/caminhada"} />}
         </nav>
 
         <button
@@ -82,6 +87,7 @@ export function AppShell({ children }: { children: ReactNode }) {
       </aside>
 
       <main className="w-full pb-28 lg:pb-12 lg:pl-64">
+        {session && <div className="mx-auto flex max-w-4xl justify-end px-4 pt-3 lg:hidden"><Button asChild variant="ghost" size="sm"><Link to="/caminhada"><Footprints />Caminhada</Link></Button></div>}
         <div className="mx-auto w-full max-w-4xl px-4 pt-6 sm:px-6 lg:px-8">{children}</div>
       </main>
 

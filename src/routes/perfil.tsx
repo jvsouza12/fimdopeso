@@ -16,6 +16,8 @@ import { AccountSection } from "@/components/app/AccountSection";
 import { adaptiveSuggestion } from "@/lib/adaptive";
 import { DEFAULT_REMINDERS, notificationPermission, requestNotificationPermission } from "@/lib/notifications";
 import { WEEKDAYS } from "@/lib/date";
+import { WalkingHistory } from "@/components/app/WalkingHistory";
+import { useSession } from "@/hooks/useSession";
 
 export const Route = createFileRoute("/perfil")({
   head: () => ({
@@ -39,6 +41,7 @@ const NOTIFICATIONS: [string, string][] = [
 
 function PerfilPage() {
   const { state, update, reset } = useStore();
+  const { session } = useSession();
   const { profile, targets } = useProfile();
   const [form, setForm] = useState(profile);
   const [t, setT] = useState(targets);
@@ -201,6 +204,7 @@ function PerfilPage() {
       <RemindersSection />
 
       <AccountSection />
+      {session && <WalkingHistory compact />}
 
       <section className="card-surface space-y-3 p-4">
         <p className="font-semibold">Aparência e dados</p>

@@ -1,4 +1,5 @@
 import type { Reminders, Settings } from "./types";
+import { registerAppWorker } from "./pwa";
 
 export const DEFAULT_REMINDERS: Reminders = {
   waterEveryMin: 120,
@@ -18,12 +19,7 @@ export function notificationPermission(): NotificationPermission | "unsupported"
 
 /** Registra o service worker (necessário para notificações no celular). */
 export async function registerServiceWorker() {
-  if (typeof navigator === "undefined" || !("serviceWorker" in navigator)) return null;
-  try {
-    return await navigator.serviceWorker.register("/sw.js");
-  } catch {
-    return null;
-  }
+  return registerAppWorker();
 }
 
 export async function requestNotificationPermission(): Promise<NotificationPermission | "unsupported"> {
