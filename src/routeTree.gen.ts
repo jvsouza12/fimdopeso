@@ -14,6 +14,7 @@ import { Route as AguaRouteImport } from './routes/agua'
 import { Route as AssistenteRouteImport } from './routes/assistente'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as CalculadorasRouteImport } from './routes/calculadoras'
+import { Route as CaminhadaRouteImport } from './routes/caminhada'
 import { Route as ComecarRouteImport } from './routes/comecar'
 import { Route as ComprasRouteImport } from './routes/compras'
 import { Route as DietaRouteImport } from './routes/dieta'
@@ -51,6 +52,11 @@ const AuthRoute = AuthRouteImport.update({
 const CalculadorasRoute = CalculadorasRouteImport.update({
   id: '/calculadoras',
   path: '/calculadoras',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CaminhadaRoute = CaminhadaRouteImport.update({
+  id: '/caminhada',
+  path: '/caminhada',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ComecarRoute = ComecarRouteImport.update({
@@ -125,6 +131,7 @@ export interface FileRoutesByFullPath {
   '/assistente': typeof AssistenteRoute
   '/auth': typeof AuthRoute
   '/calculadoras': typeof CalculadorasRoute
+  '/caminhada': typeof CaminhadaRoute
   '/comecar': typeof ComecarRoute
   '/compras': typeof ComprasRoute
   '/dieta': typeof DietaRoute
@@ -145,6 +152,7 @@ export interface FileRoutesByTo {
   '/assistente': typeof AssistenteRoute
   '/auth': typeof AuthRoute
   '/calculadoras': typeof CalculadorasRoute
+  '/caminhada': typeof CaminhadaRoute
   '/comecar': typeof ComecarRoute
   '/compras': typeof ComprasRoute
   '/dieta': typeof DietaRoute
@@ -166,6 +174,7 @@ export interface FileRoutesById {
   '/assistente': typeof AssistenteRoute
   '/auth': typeof AuthRoute
   '/calculadoras': typeof CalculadorasRoute
+  '/caminhada': typeof CaminhadaRoute
   '/comecar': typeof ComecarRoute
   '/compras': typeof ComprasRoute
   '/dieta': typeof DietaRoute
@@ -188,6 +197,7 @@ export interface FileRouteTypes {
     | '/assistente'
     | '/auth'
     | '/calculadoras'
+    | '/caminhada'
     | '/comecar'
     | '/compras'
     | '/dieta'
@@ -208,6 +218,7 @@ export interface FileRouteTypes {
     | '/assistente'
     | '/auth'
     | '/calculadoras'
+    | '/caminhada'
     | '/comecar'
     | '/compras'
     | '/dieta'
@@ -228,6 +239,7 @@ export interface FileRouteTypes {
     | '/assistente'
     | '/auth'
     | '/calculadoras'
+    | '/caminhada'
     | '/comecar'
     | '/compras'
     | '/dieta'
@@ -249,6 +261,7 @@ export interface RootRouteChildren {
   AssistenteRoute: typeof AssistenteRoute
   AuthRoute: typeof AuthRoute
   CalculadorasRoute: typeof CalculadorasRoute
+  CaminhadaRoute: typeof CaminhadaRoute
   ComecarRoute: typeof ComecarRoute
   ComprasRoute: typeof ComprasRoute
   DietaRoute: typeof DietaRoute
@@ -299,6 +312,13 @@ declare module '@tanstack/react-router' {
       path: '/calculadoras'
       fullPath: '/calculadoras'
       preLoaderRoute: typeof CalculadorasRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/caminhada': {
+      id: '/caminhada'
+      path: '/caminhada'
+      fullPath: '/caminhada'
+      preLoaderRoute: typeof CaminhadaRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/comecar': {
@@ -401,6 +421,7 @@ const rootRouteChildren: RootRouteChildren = {
   AssistenteRoute: AssistenteRoute,
   AuthRoute: AuthRoute,
   CalculadorasRoute: CalculadorasRoute,
+  CaminhadaRoute: CaminhadaRoute,
   ComecarRoute: ComecarRoute,
   ComprasRoute: ComprasRoute,
   DietaRoute: DietaRoute,

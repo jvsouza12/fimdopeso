@@ -16,6 +16,8 @@ import { Gate } from "@/components/app/Gate";
 import { Toaster } from "@/components/ui/sonner";
 import { CloudSync } from "@/lib/cloud-sync";
 import { Reminders } from "@/components/app/Reminders";
+import { WalkingProvider } from "@/lib/walking-provider";
+import { registerAppWorker } from "@/lib/pwa";
 
 function NotFoundComponent() {
   return (
@@ -122,10 +124,12 @@ function RootShell({ children }: { children: ReactNode }) {
 
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
+  useEffect(() => { void registerAppWorker(); }, []);
 
   return (
     <QueryClientProvider client={queryClient}>
       <StoreProvider>
+        <WalkingProvider>
         <CloudSync />
         <Reminders />
         <Gate>
@@ -133,6 +137,7 @@ function RootComponent() {
           <Outlet />
         </Gate>
         <Toaster position="top-center" richColors />
+        </WalkingProvider>
       </StoreProvider>
     </QueryClientProvider>
   );
