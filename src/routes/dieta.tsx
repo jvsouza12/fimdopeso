@@ -16,6 +16,8 @@ import { toast } from "sonner";
 export const Route = createFileRoute("/dieta")({
   head: () => ({
     meta: [
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
       { title: "Minha dieta — NutriPlan" },
       { name: "description", content: "Planeje suas refeições da semana e veja o total de calorias e macros de cada dia." },
       { property: "og:title", content: "Minha dieta — NutriPlan" },

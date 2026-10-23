@@ -11,6 +11,8 @@ import { cn } from "@/lib/utils";
 export const Route = createFileRoute("/calculadoras")({
   head: () => ({
     meta: [
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
       { title: "Calculadoras — NutriPlan" },
       { name: "description", content: "Calcule IMC, TMB, gasto calórico diário, meta calórica e macronutrientes com explicações simples." },
       { property: "og:title", content: "Calculadoras — NutriPlan" },

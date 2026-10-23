@@ -16,6 +16,8 @@ import { PremiumGate } from "@/components/app/PremiumGate";
 export const Route = createFileRoute("/assistente")({
   head: () => ({
     meta: [
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
       { title: "Assistente alimentar — NutriPlan" },
       { name: "description", content: "Sugestões práticas de refeições e ajustes com base nas suas metas do dia." },
       { property: "og:title", content: "Assistente alimentar — NutriPlan" },

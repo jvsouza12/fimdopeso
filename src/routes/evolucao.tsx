@@ -16,6 +16,8 @@ import { Trash2 } from "lucide-react";
 export const Route = createFileRoute("/evolucao")({
   head: () => ({
     meta: [
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
       { title: "Evolução e medidas — NutriPlan" },
       { name: "description", content: "Registre peso e medidas corporais e acompanhe sua evolução em gráficos claros." },
       { property: "og:title", content: "Evolução e medidas — NutriPlan" },

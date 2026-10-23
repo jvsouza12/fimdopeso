@@ -14,6 +14,8 @@ import { toast } from "sonner";
 export const Route = createFileRoute("/metas")({
   head: () => ({
     meta: [
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
       { title: "Metas e conquistas — NutriPlan" },
       { name: "description", content: "Crie metas pessoais, acompanhe seu progresso e mantenha sua sequência de dias." },
       { property: "og:title", content: "Metas e conquistas — NutriPlan" },
