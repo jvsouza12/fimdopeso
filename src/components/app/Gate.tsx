@@ -27,6 +27,9 @@ export function Gate({ children }: { children: ReactNode }) {
     );
   }
 
+  // Caminhadas usam apenas a conta e não precisam de peso ou metas alimentares.
+  if (normalized === "/caminhada") return <AppShell>{children}</AppShell>;
+
   if (!state.onboarded || !state.profile || !state.targets) return <Onboarding />;
 
   return <AppShell>{children}</AppShell>;
