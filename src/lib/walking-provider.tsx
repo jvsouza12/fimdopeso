@@ -169,9 +169,13 @@ export function WalkingProvider({ children }: { children: ReactNode }) {
         accuracy: position.coords.accuracy, timestamp: position.timestamp, segment: thisSegment };
       commit(list.current.map(w => w.endedAt ? w : appendPoint(w, point)));
     }, failure => {
-      pause();
-      setError(failure.code === 1 ? "Localização bloqueada. Permita o acesso nas configurações do navegador para caminhar."
-        : "Não foi possível obter sua localização. Vá para uma área aberta e tente retomar.");
+      if (failure.code === 1) {
+        pause();
+        setError("Localização bloqueada. Permita o acesso nas configurações do navegador para caminhar.");
+      } else {
+        setGps("Aguardando sinal GPS · tempo continua");
+        setError("Sinal de localização indisponível. O tempo continua, mas a distância aguarda novas posições.");
+      }
     }, { enableHighAccuracy: true, maximumAge: 0, timeout: 20000 });
   }
 
