@@ -29,6 +29,7 @@ export function WalkingProvider({ children }: { children: ReactNode }) {
   const since = useRef<number | null>(null);
   const segment = useRef(0);
   const busy = useRef(false);
+  const loaded = useRef(false);
   const writes = useRef<Promise<void>>(Promise.resolve());
   const wake = useRef<WakeLockSentinel | null>(null);
 
@@ -50,6 +51,7 @@ export function WalkingProvider({ children }: { children: ReactNode }) {
 
   function pause() {
     stopWatch();
+    segment.current += 1;
     const startTime = since.current;
     since.current = null;
     setRunning(false);
@@ -62,7 +64,7 @@ export function WalkingProvider({ children }: { children: ReactNode }) {
 
   async function sync() {
     const account = uid.current;
-    if (!account || !navigator.onLine || busy.current) return;
+    if (!account || !loaded.current || !navigator.onLine || busy.current) return;
     busy.current = true;
     setSyncing(true);
     try {
@@ -98,6 +100,7 @@ export function WalkingProvider({ children }: { children: ReactNode }) {
     let cancelled = false;
     pause();
     uid.current = userId;
+    loaded.current = false;
     list.current = [];
     setWalks([]);
     setOwner(null);
@@ -107,6 +110,7 @@ export function WalkingProvider({ children }: { children: ReactNode }) {
       list.current = saved;
       setWalks(saved);
       setOwner(userId);
+      loaded.current = true;
       setGps(saved.some(w => !w.endedAt) ? "Pausado · caminhada recuperada" : "GPS desligado");
       void sync();
     }).catch(() => setError("Armazenamento indisponível. Permita o armazenamento neste navegador."));
@@ -119,6 +123,12 @@ export function WalkingProvider({ children }: { children: ReactNode }) {
     window.addEventListener("online", connection);
     window.addEventListener("offline", connection);
     const tick = setInterval(() => {
+      if (since.current !== null) {
+        const now = Date.now();
+        const seconds = Math.max(0, (now - since.current) / 1000);
+        since.current = now;
+        commit(list.current.map(w => w.endedAt ? w : { ...w, durationSeconds: w.durationSeconds + seconds }));
+      }
       const current = list.current.find(w => !w.endedAt);
       setElapsed((current?.durationSeconds ?? 0) + (since.current === null ? 0 : (Date.now() - since.current) / 1000));
     }, 1000);
@@ -135,7 +145,7 @@ export function WalkingProvider({ children }: { children: ReactNode }) {
   }, []);
 
   function start() {
-    if (!userId || owner !== userId || since.current !== null) return;
+    if (!userId || owner !== userId || watch.current !== null) return;
     if (!("geolocation" in navigator)) { setError("Este navegador não oferece localização."); return; }
     setError("");
     const current = list.current.find(w => !w.endedAt);

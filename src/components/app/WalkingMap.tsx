@@ -33,9 +33,10 @@ export function WalkingMap({ points, online }: { points: WalkPoint[]; online: bo
     let cancelled = false;
     setFailed(false);
     void loadMaps().then(() => {
-      if (cancelled || !element.current) return;
+      const first = points[0];
+      if (cancelled || !element.current || !first) return;
       if (!map.current) map.current = new google.maps.Map(element.current, {
-        center: { lat: points[0].latitude, lng: points[0].longitude }, zoom: 16,
+        center: { lat: first.latitude, lng: first.longitude }, zoom: 16,
         clickableIcons: false, mapTypeControl: false, streetViewControl: false,
         fullscreenControl: false, gestureHandling: "cooperative",
       });
