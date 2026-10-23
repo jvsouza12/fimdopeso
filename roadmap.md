@@ -10,5 +10,5 @@
 - [x] Novo acesso antes do questionário pessoal, com opção de continuar sem conta
 - [x] Redesenho completo da tela de login e cadastro
 
-- [ ] Caminhada autenticada: GPS, distância, tempo, percurso e histórico no perfil
-- [ ] Registro offline e sincronização das caminhadas
+- [x] Caminhada autenticada: GPS, distância, tempo, percurso e histórico no perfil
+- [x] Registro offline e sincronização das caminhadas (GPS simulado validado; mapa e abertura offline precisam de verificação no app publicado)

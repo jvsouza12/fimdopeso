@@ -165,6 +165,7 @@ export function WalkingProvider({ children }: { children: ReactNode }) {
         if ("wakeLock" in navigator) void navigator.wakeLock.request("screen").then(lock => { wake.current = lock; }).catch(() => {});
       }
       setGps(`GPS ativo · precisão ${Math.round(position.coords.accuracy)} m`);
+      setError("");
       const point: WalkPoint = { latitude: position.coords.latitude, longitude: position.coords.longitude,
         accuracy: position.coords.accuracy, timestamp: position.timestamp, segment: thisSegment };
       commit(list.current.map(w => w.endedAt ? w : appendPoint(w, point)));
@@ -181,6 +182,7 @@ export function WalkingProvider({ children }: { children: ReactNode }) {
 
   async function finish() {
     pause();
+    setError("");
     commit(list.current.map(w => w.endedAt ? w : { ...w, endedAt: new Date().toISOString(), durationSeconds: Math.round(w.durationSeconds) }));
     await writes.current;
     void sync();

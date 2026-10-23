@@ -87,7 +87,7 @@ export function AppShell({ children }: { children: ReactNode }) {
       </aside>
 
       <main className="w-full pb-28 lg:pb-12 lg:pl-64">
-        {session && <div className="mx-auto flex max-w-4xl justify-end px-4 pt-3 lg:hidden"><Button asChild variant="ghost" size="sm"><Link to="/caminhada"><Footprints />Caminhada</Link></Button></div>}
+        {session && pathname !== "/caminhada" && <div className="mx-auto flex max-w-4xl justify-end px-4 pt-3 lg:hidden"><Button asChild variant="ghost" size="sm"><Link to="/caminhada"><Footprints />Caminhada</Link></Button></div>}
         <div className="mx-auto w-full max-w-4xl px-4 pt-6 sm:px-6 lg:px-8">{children}</div>
       </main>
 

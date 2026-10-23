@@ -69,7 +69,7 @@ export function WalkingMap({ points, online }: { points: WalkPoint[]; online: bo
   }, [points, ready]);
   const message = !online ? "Sem internet · percurso continua salvo"
     : failed ? "Mapa indisponível agora · percurso salvo" : points.length ? "Carregando mapa…" : "Seu percurso começa aqui";
-  return <div className="relative h-72 w-full overflow-hidden rounded-lg border border-border bg-surface-2 sm:h-96" aria-label="Mapa do percurso">
+  return <div className="relative h-56 w-full overflow-hidden rounded-lg border border-border bg-surface-2 sm:h-96" aria-label="Mapa do percurso">
     <div ref={element} className="absolute inset-0" />
     {(!online || !ready || failed || !points.length) && <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-surface-2 px-6 text-center">
       {!online ? <WifiOff className="size-8 text-muted-foreground" /> : <MapPin className="size-8 text-primary" />}
