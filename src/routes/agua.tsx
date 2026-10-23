@@ -11,6 +11,8 @@ import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis } fro
 export const Route = createFileRoute("/agua")({
   head: () => ({
     meta: [
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
       { title: "Hidratação — NutriPlan" },
       { name: "description", content: "Controle sua ingestão diária de água com atalhos rápidos e histórico semanal." },
       { property: "og:title", content: "Hidratação — NutriPlan" },

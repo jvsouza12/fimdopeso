@@ -22,6 +22,8 @@ import { useSession } from "@/hooks/useSession";
 export const Route = createFileRoute("/perfil")({
   head: () => ({
     meta: [
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
       { title: "Perfil e configurações — NutriPlan" },
       { name: "description", content: "Ajuste seus dados, metas de calorias e macros, notificações, tema e exporte seus dados." },
       { property: "og:title", content: "Perfil e configurações — NutriPlan" },

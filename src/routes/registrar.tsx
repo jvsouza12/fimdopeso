@@ -25,6 +25,8 @@ export const Route = createFileRoute("/registrar")({
   validateSearch: searchSchema,
   head: () => ({
     meta: [
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
       { title: "Registrar refeição — NutriPlan" },
       { name: "description", content: "Pesquise alimentos, ajuste a quantidade e registre sua refeição em segundos." },
       { property: "og:title", content: "Registrar refeição — NutriPlan" },

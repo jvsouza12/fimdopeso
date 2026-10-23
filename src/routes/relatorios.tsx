@@ -12,6 +12,8 @@ import { PremiumGate } from "@/components/app/PremiumGate";
 export const Route = createFileRoute("/relatorios")({
   head: () => ({
     meta: [
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
       { title: "Relatórios — NutriPlan" },
       { name: "description", content: "Estatísticas de calorias, proteína, água, peso e jejum em 7, 30, 90 dias ou 1 ano." },
       { property: "og:title", content: "Relatórios — NutriPlan" },

@@ -1,6 +1,4 @@
-/* Service worker mínimo do NutriPlan: habilita notificações e abre o app ao clicar. */
-self.addEventListener("install", () => self.skipWaiting());
-self.addEventListener("activate", (event) => event.waitUntil(self.clients.claim()));
+/* Eventos de notificações carregados pelo worker gerado. */
 
 self.addEventListener("notificationclick", (event) => {
   event.notification.close();

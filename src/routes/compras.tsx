@@ -9,6 +9,8 @@ import { toast } from "sonner";
 export const Route = createFileRoute("/compras")({
   head: () => ({
     meta: [
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
       { title: "Lista de compras — NutriPlan" },
       { name: "description", content: "Gere sua lista de compras da semana a partir da dieta planejada e marque o que já comprou." },
       { property: "og:title", content: "Lista de compras — NutriPlan" },

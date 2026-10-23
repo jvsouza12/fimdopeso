@@ -13,6 +13,8 @@ import { toast } from "sonner";
 export const Route = createFileRoute("/receitas")({
   head: () => ({
     meta: [
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
       { title: "Receitas — NutriPlan" },
       { name: "description", content: "Crie receitas com vários ingredientes e veja calorias e macros calculados automaticamente." },
       { property: "og:title", content: "Receitas — NutriPlan" },
