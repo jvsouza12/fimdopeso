@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { Footprints, Play, Pause, Square, LocateFixed, Wifi, WifiOff, RefreshCw } from "lucide-react";
+import { Footprints, Play, Pause, Square, LocateFixed, Wifi, WifiOff, RefreshCw, Loader2 } from "lucide-react";
 import { PageHeader } from "@/components/app/AppShell";
 import { Button } from "@/components/ui/button";
 import { useSession } from "@/hooks/useSession";
@@ -21,7 +21,7 @@ export const Route = createFileRoute("/caminhada")({
 
 function WalkingPage() {
   const { session, loading } = useSession();
-  const { active, running, elapsed, ready, online, gps, error, syncing, start, pause, finish, retry } = useWalking();
+  const { active, running, locating, elapsed, ready, online, gps, error, syncing, start, pause, finish, retry } = useWalking();
   return <div className="space-y-6">
     <PageHeader title="Caminhada" subtitle="Um passo de cada vez." action={<span className="flex items-center gap-1.5 text-xs text-muted-foreground">{online ? <Wifi className="size-4" /> : <WifiOff className="size-4" />}{online ? "Online" : "Sem internet"}</span>} />
     {loading ? <p role="status" className="text-sm text-muted-foreground">Carregando sua conta…</p> : !session ?
@@ -34,11 +34,11 @@ function WalkingPage() {
           </div>
           <WalkingMap points={active?.points ?? []} online={online} />
           <div className="flex gap-3">
-            <Button className="h-12 flex-1" disabled={!ready} onClick={running ? pause : start}>{running ? <Pause /> : <Play />}{running ? "Pausar" : active ? "Retomar caminhada" : "Iniciar caminhada"}</Button>
+            <Button className="h-12 flex-1" disabled={!ready} onClick={running || locating ? pause : start}>{locating ? <Loader2 className="animate-spin" /> : running ? <Pause /> : <Play />}{locating ? "Cancelar busca do GPS" : running ? "Pausar" : active ? "Retomar caminhada" : "Iniciar caminhada"}</Button>
             {active && <Button className="h-12" variant="outline" onClick={() => { void finish().then(() => toast.success("Caminhada salva")).catch(() => toast.error("Não foi possível salvar. Tente novamente.")); }}><Square />Finalizar</Button>}
           </div>
           {error && <div role="alert" className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-border p-3 text-sm text-warning"><p className="min-w-0 flex-1">{error}</p><Button size="sm" variant="ghost" onClick={retry} disabled={!online || syncing} aria-label="Tentar sincronizar"><RefreshCw /></Button></div>}
-          <p className="text-xs leading-relaxed text-muted-foreground">A localização é usada apenas durante a caminhada. Mantenha o app aberto e a tela ligada: ao sair ou bloquear a tela, a gravação é pausada. O mapa GPS mostra os pontos e o percurso, sem ruas, mesmo sem internet. Os registros ficam salvos neste aparelho e são enviados à conta quando a conexão voltar.</p>
+          <p className="text-xs leading-relaxed text-muted-foreground">Ligue a localização do celular e permita o acesso ao iniciar. O GPS registra quilômetros e percurso mesmo sem internet, com os pontos salvos neste aparelho. O mapa não exibe ruas. Mantenha o app aberto e a tela ligada: ao sair ou bloquear a tela, a gravação é pausada. Para usar sem conexão, entre na sua conta e abra esta página antes de sair; o histórico é enviado à conta quando a internet voltar.</p>
         </section>
         <WalkingHistory />
       </>}

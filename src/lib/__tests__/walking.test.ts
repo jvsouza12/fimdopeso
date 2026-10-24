@@ -8,6 +8,16 @@ describe("walking GPS rules", () => {
     expect(result.distanceMeters).toBeCloseTo(111.3, 0);
     expect(walkKm(1000)).toBe("1,00");
   });
+  it("records a one-kilometer GPS route without a network service", () => {
+    let result = walk;
+    for (let index = 0; index <= 10; index += 1) {
+      result = appendPoint(result, point(index * 0.0008983, 1000 + index * 60000));
+    }
+    expect(result.points).toHaveLength(11);
+    expect(result.distanceMeters).toBeCloseTo(1000, 0);
+    expect(walkKm(result.distanceMeters)).toBe("1,00");
+    expect(result.synced).toBe(false);
+  });
   it("does not count distance during pause", () => {
     const result = appendPoint(appendPoint(walk, point(0, 1000)), point(1, 101000, 2));
     expect(result.distanceMeters).toBe(0);

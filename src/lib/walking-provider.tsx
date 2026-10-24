@@ -7,7 +7,7 @@ import type { Json } from "@/integrations/supabase/types";
 
 interface WalkingContext {
   walks: Walk[]; active: Walk | undefined; running: boolean; elapsed: number;
-  ready: boolean; online: boolean; gps: string; error: string; syncing: boolean;
+   ready: boolean; online: boolean; gps: string; error: string; syncing: boolean; locating: boolean;
   start: () => void; pause: () => void; finish: () => Promise<void>; retry: () => void;
 }
 const Context = createContext<WalkingContext | null>(null);
@@ -18,6 +18,7 @@ export function WalkingProvider({ children }: { children: ReactNode }) {
   const [walks, setWalks] = useState<Walk[]>([]);
   const [owner, setOwner] = useState<string | null>(null);
   const [running, setRunning] = useState(false);
+  const [locating, setLocating] = useState(false);
   const [elapsed, setElapsed] = useState(0);
   const [online, setOnline] = useState(true);
   const [gps, setGps] = useState("GPS desligado");
@@ -45,6 +46,7 @@ export function WalkingProvider({ children }: { children: ReactNode }) {
   function stopWatch() {
     if (watch.current !== null) navigator.geolocation.clearWatch(watch.current);
     watch.current = null;
+    setLocating(false);
     void wake.current?.release().catch(() => {});
     wake.current = null;
   }
@@ -156,12 +158,13 @@ export function WalkingProvider({ children }: { children: ReactNode }) {
     segment.current = Math.max(0, ...(current?.points.map(p => p.segment) ?? [])) + 1;
     const thisSegment = segment.current;
     const account = userId;
-    setGps("Buscando localização…");
+    setLocating(true);
+    setGps("Buscando sinal do GPS…");
     watch.current = navigator.geolocation.watchPosition(position => {
       if (uid.current !== account || segment.current !== thisSegment) return;
       if (position.coords.accuracy > 50) { setGps("Sinal fraco · buscando GPS"); return; }
       if (since.current === null) {
-        since.current = Date.now(); setRunning(true);
+        since.current = Date.now(); setRunning(true); setLocating(false);
         if ("wakeLock" in navigator) void navigator.wakeLock.request("screen").then(lock => { wake.current = lock; }).catch(() => {});
       }
       setGps(`GPS ativo · precisão ${Math.round(position.coords.accuracy)} m`);
@@ -172,10 +175,13 @@ export function WalkingProvider({ children }: { children: ReactNode }) {
     }, failure => {
       if (failure.code === 1) {
         pause();
-        setError("Localização bloqueada. Permita o acesso nas configurações do navegador para caminhar.");
+        setError("Localização bloqueada. Ligue a localização do celular e permita o acesso à localização deste app no navegador.");
       } else {
-        setGps("Aguardando sinal GPS · tempo continua");
-        setError("Sinal de localização indisponível. O tempo continua, mas a distância aguarda novas posições.");
+        const hasStarted = since.current !== null;
+        setGps(hasStarted ? "Aguardando sinal GPS · tempo continua" : "Aguardando o primeiro sinal GPS");
+        setError(hasStarted
+          ? "Sinal GPS indisponível. O tempo continua, mas a distância aguarda novas posições. Confira se a localização do celular está ligada."
+          : "Ligue a localização do celular e aguarde em um local aberto. O tempo e os quilômetros começam com o primeiro sinal GPS, mesmo sem internet.");
       }
     }, { enableHighAccuracy: true, maximumAge: 0, timeout: 20000 });
   }
@@ -189,7 +195,7 @@ export function WalkingProvider({ children }: { children: ReactNode }) {
   }
   const visible = owner === userId && userId ? walks : [];
   return <Context.Provider value={{ walks: visible, active: visible.find(w => !w.endedAt), running,
-    elapsed, ready: Boolean(userId && owner === userId), online, gps, error, syncing,
+    elapsed, ready: Boolean(userId && owner === userId), online, gps, error, syncing, locating,
     start, pause, finish, retry: () => void sync() }}>{children}</Context.Provider>;
 }
 
