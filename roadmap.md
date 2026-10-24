@@ -12,3 +12,4 @@
 
 - [x] Caminhada autenticada: GPS, distância, tempo, percurso e histórico no perfil
 - [x] Registro offline e sincronização das caminhadas (GPS simulado validado; mapa e abertura offline precisam de verificação no app publicado)
+- [x] Mapa local offline com pontos, percursos, zoom e histórico (GPS simulado e reabertura do histórico validados; sem ruas)
