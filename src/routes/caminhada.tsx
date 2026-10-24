@@ -38,7 +38,7 @@ function WalkingPage() {
             {active && <Button className="h-12" variant="outline" onClick={() => { void finish().then(() => toast.success("Caminhada salva")).catch(() => toast.error("Não foi possível salvar. Tente novamente.")); }}><Square />Finalizar</Button>}
           </div>
           {error && <div role="alert" className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-border p-3 text-sm text-warning"><p className="min-w-0 flex-1">{error}</p><Button size="sm" variant="ghost" onClick={retry} disabled={!online || syncing} aria-label="Tentar sincronizar"><RefreshCw /></Button></div>}
-          <p className="text-xs leading-relaxed text-muted-foreground">A localização é usada apenas durante a caminhada. Mantenha o app aberto e a tela ligada: ao sair ou bloquear a tela, a gravação é pausada. Sem internet, o GPS salva no aparelho e envia à conta quando a conexão voltar. O mapa precisa de internet.</p>
+          <p className="text-xs leading-relaxed text-muted-foreground">A localização é usada apenas durante a caminhada. Mantenha o app aberto e a tela ligada: ao sair ou bloquear a tela, a gravação é pausada. Sem internet, os pontos e o percurso aparecem no mapa GPS e ficam salvos neste aparelho; as ruas do Google Maps precisam de conexão. Os registros são enviados à conta quando a conexão voltar.</p>
         </section>
         <WalkingHistory />
       </>}

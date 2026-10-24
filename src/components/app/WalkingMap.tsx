@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { MapPin, WifiOff } from "lucide-react";
 import type { WalkPoint } from "@/lib/walking";
+import { OfflineWalkingMap } from "./OfflineWalkingMap";
 
 declare global { interface Window { nutriplanMapReady?: () => void } }
 let loading: Promise<void> | undefined;
@@ -32,7 +33,9 @@ export function WalkingMap({ points, online }: { points: WalkPoint[]; online: bo
     if (!online || !points.length) return;
     let cancelled = false;
     setFailed(false);
+    const timeout = window.setTimeout(() => { if (!cancelled) setFailed(true); }, 10000);
     void loadMaps().then(() => {
+      window.clearTimeout(timeout);
       const first = points[0];
       if (cancelled || !element.current || !first) return;
       if (!map.current) map.current = new google.maps.Map(element.current, {
@@ -40,9 +43,10 @@ export function WalkingMap({ points, online }: { points: WalkPoint[]; online: bo
         clickableIcons: false, mapTypeControl: false, streetViewControl: false,
         fullscreenControl: false, gestureHandling: "cooperative",
       });
+      setFailed(false);
       setReady(true);
-    }).catch(() => { if (!cancelled) setFailed(true); });
-    return () => { cancelled = true; };
+    }).catch(() => { window.clearTimeout(timeout); if (!cancelled) setFailed(true); });
+    return () => { cancelled = true; window.clearTimeout(timeout); };
   }, [online, points.length > 0]);
   useEffect(() => {
     if (!ready || !map.current) return;
@@ -67,14 +71,13 @@ export function WalkingMap({ points, online }: { points: WalkPoint[]; online: bo
     }
     return () => { lines.current.forEach(line => line.setMap(null)); markers.current.forEach(marker => marker.setMap(null)); };
   }, [points, ready]);
-  const message = !online ? "Sem internet · percurso continua salvo"
-    : failed ? "Mapa indisponível agora · percurso salvo" : points.length ? "Carregando mapa…" : "Seu percurso começa aqui";
+  const message = !online ? "Seu percurso começa aqui · GPS offline" : "Seu percurso começa aqui";
   return <div className="relative h-56 w-full overflow-hidden rounded-lg border border-border bg-surface-2 sm:h-96" aria-label="Mapa do percurso">
-    <div ref={element} className="absolute inset-0" />
-    {(!online || !ready || failed || !points.length) && <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-surface-2 px-6 text-center">
+    <div ref={element} className={`absolute inset-0 ${!online || !ready || failed || !points.length ? "invisible" : ""}`} />
+    {points.length > 0 && (!online || !ready || failed) && <OfflineWalkingMap points={points} online={online} />}
+    {!points.length && <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-surface-2 px-6 text-center">
       {!online ? <WifiOff className="size-8 text-muted-foreground" /> : <MapPin className="size-8 text-primary" />}
       <p className="text-sm text-muted-foreground">{message}</p>
-      {points.length > 0 && <p className="text-xs text-muted-foreground">{points.length} posições registradas</p>}
     </div>}
   </div>;
 }
