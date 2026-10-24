@@ -13,7 +13,7 @@ export function projectWalk(points: WalkPoint[]) {
     const longitudeDelta = ((point.longitude - first.longitude + 540) % 360) - 180;
     return {
       x: EARTH_RADIUS * longitudeDelta * radians * cosLat,
-      y: -EARTH_RADIUS * (point.latitude - first.latitude) * radians,
+      y: EARTH_RADIUS * (first.latitude - point.latitude) * radians,
       segment: point.segment,
     };
   });
