@@ -11,9 +11,9 @@ import { KeyRound, Loader2 } from "lucide-react";
 export const Route = createFileRoute("/reset-password")({
   head: () => ({
     meta: [
-      { title: "Redefinir senha — NutriPlan" },
-      { name: "description", content: "Defina uma nova senha para acessar sua conta NutriPlan." },
-      { property: "og:title", content: "Redefinir senha — NutriPlan" },
+      { title: "Redefinir senha — CasalPlan" },
+      { name: "description", content: "Defina uma nova senha para acessar sua conta CasalPlan." },
+      { property: "og:title", content: "Redefinir senha — CasalPlan" },
       { property: "og:description", content: "Crie uma nova senha e volte a acompanhar sua dieta." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },

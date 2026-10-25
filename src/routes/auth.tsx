@@ -15,12 +15,12 @@ import authImage from "@/assets/nutriplan-auth.jpg";
 export const Route = createFileRoute("/auth")({
   head: () => ({
     meta: [
-      { title: "Entrar na sua conta — NutriPlan" },
+      { title: "Entrar na sua conta — CasalPlan" },
       {
         name: "description",
-        content: "Acesse sua conta NutriPlan para sincronizar dieta, peso e registros entre todos os seus aparelhos.",
+        content: "Acesse sua conta CasalPlan para sincronizar dieta, peso e registros entre todos os seus aparelhos.",
       },
-      { property: "og:title", content: "Entrar na sua conta — NutriPlan" },
+      { property: "og:title", content: "Entrar na sua conta — CasalPlan" },
       { property: "og:description", content: "Sincronize sua dieta e evolução em qualquer aparelho." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
@@ -170,11 +170,11 @@ function AuthPage() {
 
       <section className="flex min-h-screen items-center justify-center px-5 py-8 sm:px-10 lg:px-14">
         <div className="w-full max-w-md">
-          <Link to="/" className="mb-10 inline-flex items-center gap-2.5" aria-label="NutriPlan — início">
+          <Link to="/" className="mb-10 inline-flex items-center gap-2.5" aria-label="CasalPlan — início">
             <span className="gradient-primary flex size-10 items-center justify-center rounded-xl text-primary-foreground">
               <UtensilsCrossed className="size-5" />
             </span>
-            <span className="text-lg font-bold">NutriPlan</span>
+            <span className="text-lg font-bold">CasalPlan</span>
           </Link>
 
           <header>

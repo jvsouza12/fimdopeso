@@ -60,7 +60,7 @@ export function Landing() {
           <span className="gradient-primary flex size-9 items-center justify-center rounded-xl text-primary-foreground">
             <UtensilsCrossed className="size-5" />
           </span>
-          <span className="text-lg font-bold tracking-tight">NutriPlan</span>
+          <span className="text-lg font-bold tracking-tight">CasalPlan</span>
         </div>
         <nav className="flex items-center gap-2">
           <Button asChild variant="ghost" size="sm">
@@ -164,7 +164,7 @@ export function Landing() {
 
       <footer className="border-t border-border py-8">
         <div className="mx-auto flex max-w-6xl flex-col items-center gap-2 px-5 text-center">
-          <p className="text-sm font-semibold">NutriPlan</p>
+          <p className="text-sm font-semibold">CasalPlan</p>
           <p className="max-w-lg text-xs text-muted-foreground">
             As estimativas do app são referências educativas e não substituem a avaliação de nutricionista ou médico.
           </p>

@@ -63,7 +63,7 @@ export function AppShell({ children }: { children: ReactNode }) {
           <span className="gradient-primary flex size-9 items-center justify-center rounded-xl text-primary-foreground">
             <UtensilsCrossed className="size-4.5" />
           </span>
-          <span className="text-lg font-bold tracking-tight">NutriPlan</span>
+          <span className="text-lg font-bold tracking-tight">CasalPlan</span>
         </Link>
 
         <nav className="flex flex-1 flex-col gap-1 overflow-y-auto">

@@ -15,13 +15,13 @@ import {
 export const Route = createFileRoute("/premium")({
   head: () => ({
     meta: [
-      { title: "NutriPlan Premium — recursos avançados" },
+      { title: "CasalPlan Premium — recursos avançados" },
       {
         name: "description",
         content:
-          "Assine o NutriPlan Premium: assistente com IA, registro por foto e código de barras, projeção de peso e relatórios completos.",
+          "Assine o CasalPlan Premium: assistente com IA, registro por foto e código de barras, projeção de peso e relatórios completos.",
       },
-      { property: "og:title", content: "NutriPlan Premium" },
+      { property: "og:title", content: "CasalPlan Premium" },
       { property: "og:description", content: "Assistente com IA, registro por foto e relatórios avançados." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
@@ -48,7 +48,7 @@ function PremiumPage() {
     <div className="space-y-6">
       <PageHeader
         title="Premium"
-        subtitle="Desbloqueie os recursos avançados do NutriPlan."
+        subtitle="Desbloqueie os recursos avançados do CasalPlan."
       />
 
       {premium && (

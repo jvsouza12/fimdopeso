@@ -15,13 +15,13 @@ export const Route = createFileRoute("/")({
     meta: [
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
-      { title: "NutriPlan — App de dieta, emagrecimento e evolução" },
+      { title: "CasalPlan — App de dieta, emagrecimento e evolução" },
       {
         name: "description",
         content:
           "Monte seu plano alimentar grátis: calorias, macros, fibras, água, jejum e acompanhamento de peso com metas que se ajustam à sua evolução.",
       },
-      { property: "og:title", content: "NutriPlan — App de dieta, emagrecimento e evolução" },
+      { property: "og:title", content: "CasalPlan — App de dieta, emagrecimento e evolução" },
       {
         property: "og:description",
         content:

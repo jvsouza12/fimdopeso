@@ -74,7 +74,7 @@ export function Onboarding() {
             <UtensilsCrossed className="size-5" />
           </span>
           <div>
-            <p className="text-lg font-bold tracking-tight">NutriPlan</p>
+            <p className="text-lg font-bold tracking-tight">CasalPlan</p>
             <p className="text-xs text-muted-foreground">Seu painel pessoal de evolução</p>
           </div>
         </div>
