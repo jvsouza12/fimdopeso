@@ -97,6 +97,7 @@ function AccountStoreProvider({ children, accountId }: { children: ReactNode; ac
   const storageKey = accountId ? `${KEY}:account:${accountId}` : `${KEY}:guest`;
   const [state, setState] = useState<AppState>(() => structuredClone(initialState));
   const [hydrated, setHydrated] = useState(false);
+  const [storageError, setStorageError] = useState<string | null>(null);
 
   useEffect(() => {
     try {
@@ -106,7 +107,18 @@ function AccountStoreProvider({ children, accountId }: { children: ReactNode; ac
         setState({
           ...initialState,
           ...saved,
-          settings: { ...initialState.settings, ...(saved.settings ?? {}) },
+          settings: {
+            ...initialState.settings,
+            ...(saved.settings ?? {}),
+            notifications: {
+              ...initialState.settings.notifications,
+              ...(saved.settings?.notifications ?? {}),
+            },
+            reminders: {
+              ...initialState.settings.reminders,
+              ...(saved.settings?.reminders ?? {}),
+            },
+          },
         });
       }
     } catch {
@@ -119,8 +131,9 @@ function AccountStoreProvider({ children, accountId }: { children: ReactNode; ac
     if (!hydrated) return;
     try {
       localStorage.setItem(storageKey, JSON.stringify(state));
+      setStorageError(null);
     } catch {
-      /* quota */
+      setStorageError("As últimas alterações não foram salvas neste aparelho. Libere espaço ou permita o armazenamento e tente novamente antes de fechar a página.");
     }
     const root = document.documentElement;
     root.classList.toggle("dark", state.settings.theme === "dark");
@@ -131,7 +144,12 @@ function AccountStoreProvider({ children, accountId }: { children: ReactNode; ac
   }, []);
 
   const reset = useCallback(() => {
-    localStorage.removeItem(storageKey);
+    try {
+      localStorage.removeItem(storageKey);
+    } catch {
+      setStorageError("Não foi possível apagar os dados salvos neste aparelho. Permita o armazenamento e tente novamente.");
+      return;
+    }
     setState(structuredClone(initialState));
   }, [storageKey]);
 
@@ -160,7 +178,27 @@ function AccountStoreProvider({ children, accountId }: { children: ReactNode; ac
     [state, hydrated, accountId, update, reset, allFoods, addLog],
   );
 
-  return <StoreContext.Provider value={value}>{hydrated ? children : <AccountLoading />}</StoreContext.Provider>;
+  return (
+    <StoreContext.Provider value={value}>
+      {hydrated ? (
+        <>
+          {storageError && (
+            <div role="alert" className="sticky top-0 z-[60] flex flex-wrap items-center justify-center gap-3 border-b border-destructive/30 bg-background px-4 py-3 text-sm text-foreground">
+              <p className="max-w-2xl">{storageError}</p>
+              <button
+                type="button"
+                className="rounded-lg bg-primary px-3 py-2 font-medium text-primary-foreground hover:bg-primary/90"
+                onClick={() => setState((prev) => structuredClone(prev))}
+              >
+                Tentar salvar novamente
+              </button>
+            </div>
+          )}
+          {children}
+        </>
+      ) : <AccountLoading />}
+    </StoreContext.Provider>
+  );
 }
 
 export function useStore() {

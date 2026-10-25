@@ -18,8 +18,10 @@ import {
   Sun,
   Crown,
   Footprints,
+  Menu,
+  X,
 } from "lucide-react";
-import type { ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { useStore } from "@/lib/store";
 import { cn } from "@/lib/utils";
 import { useSession } from "@/hooks/useSession";
@@ -49,8 +51,13 @@ const secondaryNav = [
 export function AppShell({ children }: { children: ReactNode }) {
   const { state, update } = useStore();
   const { session } = useSession();
-  const pathname = useRouterState({ select: (s) => s.location.pathname });
+  const pathname = useRouterState({ select: (s) => s.location.pathname.replace(/\/$/, "") || "/" });
   const dark = state.settings.theme === "dark";
+  const [menuOpen, setMenuOpen] = useState(false);
+
+  useEffect(() => {
+    setMenuOpen(false);
+  }, [pathname]);
 
   const toggleTheme = () =>
     update((d) => ({ ...d, settings: { ...d.settings, theme: dark ? "light" : "dark" } }));
@@ -87,7 +94,53 @@ export function AppShell({ children }: { children: ReactNode }) {
       </aside>
 
       <main className="w-full pb-28 lg:pb-12 lg:pl-64">
-        {session && pathname !== "/caminhada" && <div className="mx-auto flex max-w-4xl justify-end px-4 pt-3 lg:hidden"><Button asChild variant="ghost" size="sm"><Link to="/caminhada"><Footprints />Caminhada</Link></Button></div>}
+        <div className="mx-auto max-w-4xl px-4 pt-3 sm:px-6 lg:hidden">
+          <div className="flex items-center justify-between gap-2">
+            <Link to="/" className="text-lg font-bold tracking-tight text-foreground">CasalPlan</Link>
+            <div className="flex items-center gap-1">
+              {session && pathname !== "/caminhada" && (
+                <Button asChild variant="ghost" size="sm">
+                  <Link to="/caminhada"><Footprints className="size-4" />Caminhada</Link>
+                </Button>
+              )}
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                aria-expanded={menuOpen}
+                aria-controls="mobile-resources"
+                onClick={() => setMenuOpen((open) => !open)}
+              >
+                {menuOpen ? <X className="size-4" /> : <Menu className="size-4" />}
+                Menu
+              </Button>
+            </div>
+          </div>
+          {menuOpen && (
+            <nav id="mobile-resources" aria-label="Mais recursos" className="mt-3 rounded-2xl border border-border bg-surface p-3 text-foreground">
+              <div className="grid grid-cols-2 gap-1">
+                {secondaryNav.map((item) => (
+                  <Link
+                    key={item.to}
+                    to={item.to}
+                    onClick={() => setMenuOpen(false)}
+                    aria-current={pathname === item.to ? "page" : undefined}
+                    className={cn(
+                      "flex items-center gap-2 rounded-xl px-3 py-3 text-sm font-medium transition-colors",
+                      pathname === item.to ? "bg-primary/10 text-primary" : "text-muted-foreground hover:bg-muted hover:text-foreground",
+                    )}
+                  >
+                    <item.icon className="size-4 shrink-0" />{item.label}
+                  </Link>
+                ))}
+              </div>
+              <Button type="button" variant="ghost" className="mt-3 w-full border-t border-border" onClick={toggleTheme}>
+                {dark ? <Sun className="size-4" /> : <Moon className="size-4" />}
+                {dark ? "Tema claro" : "Tema escuro"}
+              </Button>
+            </nav>
+          )}
+        </div>
         <div className="mx-auto w-full max-w-4xl px-4 pt-6 sm:px-6 lg:px-8">{children}</div>
       </main>
 

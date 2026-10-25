@@ -46,11 +46,13 @@ function Dashboard() {
   const today = todayKey();
 
   const water = state.water.find((w) => w.date === today)?.ml ?? 0;
-  const startWeight = state.weights.at(-1)?.weight ?? profile.weight;
-  const currentWeight = state.weights[0]?.weight ?? profile.weight;
-  const totalToLose = Math.abs(startWeight - profile.targetWeight) || 1;
-  const done = Math.abs(startWeight - currentWeight);
-  const progress = Math.min(100, Math.round((done / totalToLose) * 100));
+  const weights = [...state.weights].sort((a, b) => b.date.localeCompare(a.date));
+  const startWeight = weights.at(-1)?.weight ?? profile.weight;
+  const currentWeight = weights[0]?.weight ?? profile.weight;
+  const targetChange = profile.targetWeight - startWeight;
+  const progress = targetChange === 0
+    ? (currentWeight === profile.targetWeight ? 100 : 0)
+    : Math.max(0, Math.min(100, Math.round(((currentWeight - startWeight) / targetChange) * 100)));
 
   const streak = computeStreak(state.logs.map((l) => l.date));
   const activeFast = state.fasts.find((f) => !f.endedAt);
@@ -147,7 +149,7 @@ function Dashboard() {
           <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-muted">
             <div
               className="h-full rounded-full bg-primary"
-              style={{ width: `${Math.min(100, (water / targets.water) * 100)}%` }}
+              style={{ width: `${targets.water > 0 ? Math.max(0, Math.min(100, (water / targets.water) * 100)) : 0}%` }}
             />
           </div>
         </Link>
@@ -205,7 +207,7 @@ function Dashboard() {
                     </p>
                   </div>
                   <Button asChild variant="ghost" size="icon">
-                    <Link to="/registrar" search={{ meal }}>
+                    <Link to="/registrar" search={{ meal }} aria-label={`Adicionar alimento: ${MEAL_LABELS[meal]}`}>
                       <Plus className="size-4" />
                     </Link>
                   </Button>

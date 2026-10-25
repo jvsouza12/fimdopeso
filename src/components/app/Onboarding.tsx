@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useNavigate } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -37,33 +38,64 @@ const empty: Profile = {
   deadlineWeeks: 12,
 };
 
+function stepError(profile: Profile, step: number): string | null {
+  const within = (value: number, min: number, max: number) => Number.isFinite(value) && value >= min && value <= max;
+  if (step === 0) {
+    if (!profile.name.trim()) return "Informe seu nome para continuar.";
+    if (!Number.isInteger(profile.age) || !within(profile.age, 18, 120)) return "Informe uma idade entre 18 e 120 anos. Este cálculo automático é destinado a adultos.";
+  }
+  if (step === 1) {
+    if (!within(profile.height, 80, 250)) return "Informe uma altura entre 80 e 250 cm.";
+    if (!within(profile.weight, 25, 500)) return "Informe um peso atual entre 25 e 500 kg.";
+    if (!within(profile.targetWeight, 25, 500)) return "Informe um peso desejado entre 25 e 500 kg.";
+    if (!Number.isInteger(profile.deadlineWeeks) || !within(profile.deadlineWeeks, 1, 520)) return "Informe um prazo inteiro entre 1 e 520 semanas.";
+  }
+  if (step === 3) {
+    if (!within(profile.targetWeight, 25, 500)) return "Informe um peso desejado entre 25 e 500 kg.";
+    if (profile.goal === "lose" && profile.targetWeight >= profile.weight) return "Para perder peso, a meta deve ser menor que o peso atual.";
+    if (profile.goal === "gain" && profile.targetWeight <= profile.weight) return "Para ganhar peso, a meta deve ser maior que o peso atual.";
+    if (profile.goal === "maintain" && profile.targetWeight !== profile.weight) return "Para manter o peso, a meta deve ser igual ao peso atual.";
+  }
+  return null;
+}
+
 export function Onboarding() {
   const { update } = useStore();
+  const navigate = useNavigate();
   const [step, setStep] = useState(0);
   const [p, setP] = useState<Profile>(empty);
   const set = <K extends keyof Profile>(k: K, v: Profile[K]) => setP((prev) => ({ ...prev, [k]: v }));
 
-  const targets = computeTargets(p);
+  const targets = computeTargets(stepError(p, 0) || stepError(p, 1) ? empty : p);
+  const validationError = stepError(p, step);
   const steps = 6;
 
   const finish = () => {
+    const invalidStep = [0, 1, 3].find((value) => stepError(p, value));
+    if (invalidStep !== undefined) {
+      setStep(invalidStep);
+      return;
+    }
+    const initialWeight = { id: crypto.randomUUID(), date: todayKey(), weight: p.weight, note: "Peso inicial" };
+    const initialGoals = [
+      ...(p.targetWeight !== p.weight ? [{
+        id: crypto.randomUUID(),
+        title: `Chegar a ${p.targetWeight} kg`,
+        target: Math.abs(p.weight - p.targetWeight),
+        current: 0,
+        unit: "kg",
+      }] : []),
+      { id: crypto.randomUUID(), title: "Beber a meta de água por 7 dias", target: 7, current: 0, unit: "dias" },
+    ];
     update((d) => ({
       ...d,
       onboarded: true,
-      profile: p,
+      profile: { ...p, name: p.name.trim() },
       targets,
-      weights: [{ id: crypto.randomUUID(), date: todayKey(), weight: p.weight, note: "Peso inicial" }],
-      goals: [
-        {
-          id: crypto.randomUUID(),
-          title: `Chegar a ${p.targetWeight} kg`,
-          target: Math.abs(p.weight - p.targetWeight),
-          current: 0,
-          unit: "kg",
-        },
-        { id: crypto.randomUUID(), title: "Beber a meta de água por 7 dias", target: 7, current: 0, unit: "dias" },
-      ],
+      weights: d.weights.length ? d.weights : [initialWeight],
+      goals: d.goals.length ? d.goals : initialGoals,
     }));
+    void navigate({ to: "/", replace: true });
   };
 
   return (
@@ -151,8 +183,23 @@ export function Onboarding() {
                 vertical
                 options={(Object.keys(GOAL_LABELS) as Goal[]).map((k) => ({ v: k, l: GOAL_LABELS[k] }))}
                 value={p.goal}
-                onChange={(v) => set("goal", v as Goal)}
+                onChange={(v) => setP((prev) => ({
+                  ...prev,
+                  goal: v as Goal,
+                  targetWeight: v === "maintain" ? prev.weight : prev.targetWeight,
+                }))}
               />
+              <Field label="Peso desejado (kg)">
+                <Input
+                  type="number"
+                  min={25}
+                  max={500}
+                  step="0.1"
+                  value={p.targetWeight}
+                  disabled={p.goal === "maintain"}
+                  onChange={(e) => set("targetWeight", +e.target.value)}
+                />
+              </Field>
               <Field label="Refeições por dia">
                 <Choices
                   options={[3, 4, 5, 6].map((n) => ({ v: String(n), l: `${n}` }))}
@@ -173,10 +220,15 @@ export function Onboarding() {
                       <button
                         key={r}
                         type="button"
+                        aria-pressed={on}
                         onClick={() =>
                           set(
                             "restrictions",
-                            on ? p.restrictions.filter((x) => x !== r) : [...p.restrictions, r],
+                            on
+                              ? p.restrictions.filter((x) => x !== r)
+                              : r === "Nenhuma"
+                                ? [r]
+                                : [...p.restrictions.filter((x) => x !== "Nenhuma"), r],
                           )
                         }
                         className={cn(
@@ -247,12 +299,17 @@ export function Onboarding() {
             </Section>
           )}
 
+          {validationError && (
+            <p role="status" aria-live="polite" className="mt-5 rounded-xl border border-border bg-surface-2 p-3 text-sm text-muted-foreground">
+              {validationError}
+            </p>
+          )}
           <div className="mt-8 flex items-center justify-between gap-3">
             <Button variant="ghost" onClick={() => setStep((s) => Math.max(0, s - 1))} disabled={step === 0}>
               <ArrowLeft className="size-4" /> Voltar
             </Button>
             {step < steps - 1 ? (
-              <Button onClick={() => setStep((s) => s + 1)} disabled={step === 0 && !p.name.trim()}>
+              <Button onClick={() => { if (!validationError) setStep((s) => s + 1); }} disabled={Boolean(validationError)}>
                 Continuar <ArrowRight className="size-4" />
               </Button>
             ) : (

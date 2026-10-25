@@ -37,7 +37,9 @@ export function WalkingProvider({ children }: { children: ReactNode }) {
     list.current = next;
     setWalks(next);
     writes.current = writes.current.catch(() => {}).then(() => writeWalks(account, next));
-    void writes.current.catch(() => setError("Não foi possível salvar no aparelho. Libere espaço antes de continuar."));
+    void writes.current.catch(() => {
+      if (uid.current === account) setError("Não foi possível salvar no aparelho. Libere espaço antes de continuar.");
+    });
   }
 
   function stopWatch() {
@@ -84,15 +86,21 @@ export function WalkingProvider({ children }: { children: ReactNode }) {
     list.current = [];
     setWalks([]);
     setOwner(null);
+    setElapsed(0);
+    setSyncing(false);
+    setGps("GPS desligado");
     setError("");
     if (userId) void readWalks(userId).then(saved => {
-      if (cancelled) return;
+      if (cancelled || uid.current !== userId) return;
       list.current = saved;
       setWalks(saved);
       setOwner(userId);
       loaded.current = true;
+      setElapsed(saved.find(w => !w.endedAt)?.durationSeconds ?? 0);
       setGps(saved.some(w => !w.endedAt) ? "Pausado · caminhada recuperada" : "GPS desligado");
-    }).catch(() => setError("Armazenamento indisponível. Permita o armazenamento neste navegador."));
+    }).catch(() => {
+      if (!cancelled && uid.current === userId) setError("Armazenamento indisponível. Permita o armazenamento neste navegador.");
+    });
     return () => { cancelled = true; pause(); };
   }, [userId]);
 
@@ -123,7 +131,8 @@ export function WalkingProvider({ children }: { children: ReactNode }) {
   }, []);
 
   function start() {
-    if (!userId || owner !== userId || watch.current !== null) return;
+    if (!userId || owner !== userId || watch.current !== null || document.hidden) return;
+    if (!window.isSecureContext) { setError("Abra o aplicativo por uma conexão HTTPS para permitir o GPS."); return; }
     if (!("geolocation" in navigator)) { setError("Este navegador não oferece localização."); return; }
     setError("");
     const current = list.current.find(w => !w.endedAt);
