@@ -24,9 +24,9 @@ export const Route = createFileRoute("/perfil")({
     meta: [
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
-      { title: "Perfil e configurações — NutriPlan" },
+      { title: "Perfil e configurações — CasalPlan" },
       { name: "description", content: "Ajuste seus dados, metas de calorias e macros, notificações, tema e exporte seus dados." },
-      { property: "og:title", content: "Perfil e configurações — NutriPlan" },
+      { property: "og:title", content: "Perfil e configurações — CasalPlan" },
       { property: "og:description", content: "Seus dados, metas e preferências em um só lugar." },
     ],
   }),
@@ -51,6 +51,10 @@ function PerfilPage() {
   const set = <K extends keyof typeof form>(k: K, v: (typeof form)[K]) => setForm((p) => ({ ...p, [k]: v }));
 
   const save = () => {
+    if (!form.name.trim()) {
+      toast.error("Informe seu nome para salvar o perfil");
+      return;
+    }
     update((d) => ({ ...d, profile: form, targets: t }));
     toast.success("Perfil atualizado");
   };
@@ -67,7 +71,7 @@ function PerfilPage() {
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = "nutriplan-dados.json";
+    a.download = "casalplan-dados.json";
     a.click();
     URL.revokeObjectURL(url);
   };
@@ -86,6 +90,16 @@ function PerfilPage() {
           <div className="space-y-2">
             <Label>Idade</Label>
             <Input type="number" value={form.age} onChange={(e) => set("age", +e.target.value)} />
+          </div>
+          <div className="space-y-2 sm:col-span-2">
+            <Label>Sexo (usado no cálculo das metas)</Label>
+            <div className="flex flex-wrap gap-2">
+              {([["f", "Feminino"], ["m", "Masculino"]] as const).map(([value, label]) => (
+                <Pill key={value} active={form.sex === value} onClick={() => set("sex", value)}>
+                  {label}
+                </Pill>
+              ))}
+            </div>
           </div>
           <div className="space-y-2">
             <Label>Altura (cm)</Label>

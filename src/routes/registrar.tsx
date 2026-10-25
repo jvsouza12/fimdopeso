@@ -27,9 +27,9 @@ export const Route = createFileRoute("/registrar")({
     meta: [
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
-      { title: "Registrar refeição — NutriPlan" },
+      { title: "Registrar refeição — CasalPlan" },
       { name: "description", content: "Pesquise alimentos, ajuste a quantidade e registre sua refeição em segundos." },
-      { property: "og:title", content: "Registrar refeição — NutriPlan" },
+      { property: "og:title", content: "Registrar refeição — CasalPlan" },
       { property: "og:description", content: "Registro rápido de alimentos com cálculo automático de macros." },
     ],
   }),

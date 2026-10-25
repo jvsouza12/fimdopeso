@@ -241,6 +241,28 @@ export function CloudSync() {
     };
   }, [state, hydrated, userId, push, conflict]);
 
+  // Envia o que ainda está pendente quando o app fica em segundo plano ou é fechado.
+  useEffect(() => {
+    if (!hydrated || !userId) return;
+    const flush = () => {
+      if (conflict) return;
+      if (timer.current) {
+        clearTimeout(timer.current);
+        timer.current = null;
+      }
+      const pending = stateRef.current;
+      const payload = JSON.stringify(pending);
+      if (payload === lastSaved.current) return;
+      void push(pending, userId).catch(() => {});
+    };
+    document.addEventListener("visibilitychange", flush);
+    window.addEventListener("pagehide", flush);
+    return () => {
+      document.removeEventListener("visibilitychange", flush);
+      window.removeEventListener("pagehide", flush);
+    };
+  }, [hydrated, userId, push, conflict]);
+
   const resolve = async (choice: "merge" | "cloud" | "device") => {
     if (!conflict || !userId) return;
     const next =

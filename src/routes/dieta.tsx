@@ -18,9 +18,9 @@ export const Route = createFileRoute("/dieta")({
     meta: [
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
-      { title: "Minha dieta — NutriPlan" },
+      { title: "Minha dieta — CasalPlan" },
       { name: "description", content: "Planeje suas refeições da semana e veja o total de calorias e macros de cada dia." },
-      { property: "og:title", content: "Minha dieta — NutriPlan" },
+      { property: "og:title", content: "Minha dieta — CasalPlan" },
       { property: "og:description", content: "Monte sua dieta semanal com cálculo automático de calorias." },
     ],
   }),
