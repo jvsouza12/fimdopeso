@@ -11,9 +11,9 @@ import { toast } from "sonner";
 
 export const Route = createFileRoute("/caminhada")({
   head: () => ({ meta: [
-    { title: "Caminhada e percursos — NutriPlan" },
+    { title: "Caminhada e percursos — CasalPlan" },
     { name: "description", content: "Acompanhe distância, tempo e seus percursos de caminhada com histórico privado na sua conta." },
-    { property: "og:title", content: "Caminhada e percursos — NutriPlan" },
+    { property: "og:title", content: "Caminhada e percursos — CasalPlan" },
     { property: "og:description", content: "Seu tempo, quilômetros e histórico de caminhadas em um só lugar." },
     { property: "og:type", content: "website" }, { name: "twitter:card", content: "summary" },
   ] }), component: WalkingPage,
@@ -38,7 +38,8 @@ function WalkingPage() {
             <Button className="h-12 flex-1" disabled={!ready} onClick={running || locating ? pause : start}>{locating ? <Loader2 className="animate-spin" /> : running ? <Pause /> : <Play />}{locating ? "Cancelar busca do GPS" : running ? "Pausar" : active ? "Retomar caminhada" : "Iniciar caminhada"}</Button>
             {active && <Button className="h-12" variant="outline" onClick={() => { void finish().then(() => toast.success("Caminhada salva")).catch(() => toast.error("Não foi possível salvar. Tente novamente.")); }}><Square />Finalizar</Button>}
           </div>
-          {error && <div role="alert" className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-border p-3 text-sm text-warning"><p className="min-w-0 flex-1">{error}</p><Button size="sm" variant="ghost" onClick={retry} disabled={!ready || syncing} aria-label="Tentar salvar no aparelho"><RefreshCw /></Button></div>}
+          {!ready && !error && <p role="status" className="text-sm text-muted-foreground">Carregando caminhadas deste aparelho…</p>}
+          {error && <div role="alert" className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-border p-3 text-sm text-warning"><p className="min-w-0 flex-1">{error}</p><Button size="sm" variant="ghost" onClick={retry} disabled={syncing} aria-label={ready ? "Tentar salvar no aparelho" : "Tentar carregar caminhadas"}><RefreshCw />Tentar novamente</Button></div>}
           <div className="space-y-2 rounded-lg border border-border bg-surface p-4 text-xs leading-relaxed text-muted-foreground">
             <p>Ligue a localização e permita o acesso ao iniciar. O GPS registra o percurso sem internet, com marcas a cada quilômetro. O círculo indica a precisão do último ponto. Arraste para explorar e use o botão de localização para voltar a acompanhar.</p>
             <p>O tempo ativo inclui paradas enquanto a gravação estiver ligada; use Pausar quando descansar. Trechos separados por pausa ou perda prolongada de sinal não somam distância entre si.</p>

@@ -22,6 +22,7 @@ export function WalkingProvider({ children }: { children: ReactNode }) {
   const [gps, setGps] = useState("GPS desligado");
   const [error, setError] = useState("");
   const [syncing, setSyncing] = useState(false);
+  const [loadAttempt, setLoadAttempt] = useState(0);
   const list = useRef<Walk[]>([]);
   const uid = useRef<string | null>(null);
   const watch = useRef<number | null>(null);
@@ -61,6 +62,7 @@ export function WalkingProvider({ children }: { children: ReactNode }) {
       const seconds = Math.max(0, (Date.now() - startTime) / 1000);
       commit(list.current.map(w => w.endedAt ? w : { ...w, durationSeconds: w.durationSeconds + seconds }));
     }
+    setElapsed(list.current.find(w => !w.endedAt)?.durationSeconds ?? 0);
   }
 
   async function sync() {
@@ -90,7 +92,7 @@ export function WalkingProvider({ children }: { children: ReactNode }) {
     setSyncing(false);
     setGps("GPS desligado");
     setError("");
-    if (userId) void readWalks(userId).then(saved => {
+    if (userId) void writes.current.catch(() => {}).then(() => readWalks(userId)).then(saved => {
       if (cancelled || uid.current !== userId) return;
       list.current = saved;
       setWalks(saved);
@@ -102,7 +104,7 @@ export function WalkingProvider({ children }: { children: ReactNode }) {
       if (!cancelled && uid.current === userId) setError("Armazenamento indisponível. Permita o armazenamento neste navegador.");
     });
     return () => { cancelled = true; pause(); };
-  }, [userId]);
+  }, [userId, loadAttempt]);
 
   useEffect(() => {
     const connection = () => { setOnline(navigator.onLine); };
@@ -140,7 +142,7 @@ export function WalkingProvider({ children }: { children: ReactNode }) {
       id: crypto.randomUUID(), userId, startedAt: new Date().toISOString(), endedAt: null,
       durationSeconds: 0, distanceMeters: 0, points: [], synced: false,
     }, ...list.current]);
-    segment.current = Math.max(0, ...(current?.points.map(p => p.segment) ?? [])) + 1;
+    segment.current = (current?.points.reduce((max, point) => Math.max(max, point.segment), 0) ?? 0) + 1;
     let thisSegment = segment.current;
     let lastSignal: number | null = null;
     const account = userId;
@@ -195,7 +197,15 @@ export function WalkingProvider({ children }: { children: ReactNode }) {
   const visible = owner === userId && userId ? walks : [];
   return <Context.Provider value={{ walks: visible, active: visible.find(w => !w.endedAt), running,
     elapsed, ready: Boolean(userId && owner === userId), online, gps, error, syncing, locating,
-    start, pause, finish, retry: () => void sync() }}>{children}</Context.Provider>;
+    start, pause, finish, retry: () => {
+      if (!userId || uid.current !== userId) return;
+      if (!loaded.current) {
+        setError("");
+        setLoadAttempt(attempt => attempt + 1);
+        return;
+      }
+      void sync();
+    } }}>{children}</Context.Provider>;
 }
 
 export function useWalking() {

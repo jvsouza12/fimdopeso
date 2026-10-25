@@ -1,3 +1,4 @@
+import { useRef, useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
@@ -20,23 +21,36 @@ export function AccountSection() {
   const status = useSyncStatus();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const [signingOut, setSigningOut] = useState(false);
+  const signOutPending = useRef(false);
 
   const info = STATUS_LABEL[status] ?? STATUS_LABEL["offline"]!;
   const Icon = info.icon;
 
   const signOut = async () => {
-    await queryClient.cancelQueries();
-    queryClient.clear();
-    await supabase.auth.signOut();
-    toast.success("Você saiu da conta");
-    navigate({ to: "/auth", replace: true });
+    if (signOutPending.current) return;
+    signOutPending.current = true;
+    setSigningOut(true);
+    try {
+      await queryClient.cancelQueries();
+      const { error } = await supabase.auth.signOut();
+      if (error) throw error;
+      queryClient.clear();
+      toast.success("Você saiu da conta");
+      await navigate({ to: "/auth", replace: true });
+    } catch {
+      toast.error("Não foi possível concluir a saída. Tente novamente.");
+    } finally {
+      signOutPending.current = false;
+      setSigningOut(false);
+    }
   };
 
   return (
     <section className="card-surface space-y-3 p-4">
       <p className="font-semibold">Conta e sincronização</p>
 
-      <div className="flex items-center gap-2 text-sm text-muted-foreground">
+      <div className="flex items-center gap-2 text-sm text-muted-foreground" role="status">
         <Icon className={`size-4 ${status === "saving" || status === "loading" ? "animate-spin" : ""}`} />
         <span>{info.text}</span>
       </div>
@@ -46,15 +60,15 @@ export function AccountSection() {
           <p className="text-sm">
             Conectado como <strong className="text-foreground">{session.user.email}</strong>
           </p>
-          <Button variant="secondary" className="w-full" onClick={signOut}>
-            <LogOut className="size-4" /> Sair da conta
+          <Button variant="secondary" className="w-full" onClick={signOut} disabled={signingOut}>
+            <LogOut className="size-4" /> {signingOut ? "Saindo…" : "Sair da conta"}
           </Button>
         </>
       ) : (
         <>
           <p className="text-sm text-muted-foreground">
-            Crie uma conta para guardar sua dieta, peso e registros na nuvem e acessar de qualquer aparelho. Os dados
-            deste aparelho são enviados automaticamente no primeiro login.
+            Sem conta, seus registros ficam neste navegador. Os dados de cada conta ficam separados;
+            os registros feitos como visitante não são transferidos automaticamente ao entrar.
           </p>
           <Button className="w-full" onClick={() => navigate({ to: "/auth" })}>
             <LogIn className="size-4" /> Entrar ou criar conta
