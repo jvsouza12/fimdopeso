@@ -20,7 +20,8 @@ export interface Walk {
 }
 
 export function acceptPoint(points: WalkPoint[], point: WalkPoint): boolean {
-  if (!Number.isFinite(point.latitude) || !Number.isFinite(point.longitude) ||
+  if (!Number.isFinite(point.timestamp) || point.timestamp <= 0 ||
+      !Number.isFinite(point.latitude) || !Number.isFinite(point.longitude) ||
       Math.abs(point.latitude) > 90 || Math.abs(point.longitude) > 180 ||
       !Number.isFinite(point.accuracy) || point.accuracy < 0 || point.accuracy > 50) return false;
   const last = points.at(-1);
@@ -46,4 +47,10 @@ export function walkTime(seconds: number) {
 
 export function walkKm(meters: number) {
   return (meters / 1000).toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+
+export function walkPace(meters: number, seconds: number) {
+  if (!Number.isFinite(meters) || !Number.isFinite(seconds) || meters < 20 || seconds <= 0) return "—";
+  const pace = Math.round(seconds / (meters / 1000));
+  return `${Math.floor(pace / 60)}:${String(pace % 60).padStart(2, "0")}`;
 }

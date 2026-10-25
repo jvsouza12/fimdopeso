@@ -4,7 +4,7 @@ import { PageHeader } from "@/components/app/AppShell";
 import { Button } from "@/components/ui/button";
 import { useSession } from "@/hooks/useSession";
 import { useWalking } from "@/lib/walking-provider";
-import { walkKm, walkTime } from "@/lib/walking";
+import { walkKm, walkPace, walkTime } from "@/lib/walking";
 import { WalkingMap } from "@/components/app/WalkingMap";
 import { WalkingHistory } from "@/components/app/WalkingHistory";
 import { toast } from "sonner";
@@ -28,17 +28,23 @@ function WalkingPage() {
       <section className="space-y-4 py-10 text-center"><Footprints className="mx-auto size-10 text-primary" /><h2 className="text-xl font-semibold">Sua caminhada, na sua conta</h2><Button asChild><Link to="/auth">Entrar para caminhar</Link></Button></section> : <>
         <section className="space-y-5">
           <div className="flex flex-wrap items-center justify-between gap-2 text-sm"><span className="flex items-center gap-2 text-muted-foreground"><LocateFixed className="size-4 text-primary" />{gps}</span>{active && <span className="text-xs text-muted-foreground">{running ? "Em andamento" : "Pronta para retomar"}</span>}</div>
-          <div className="grid grid-cols-2 divide-x divide-border py-3 text-center">
-            <div><p className="text-4xl font-bold tabular-nums sm:text-5xl">{walkKm(active?.distanceMeters ?? 0)}</p><p className="mt-2 text-xs text-muted-foreground">Quilômetros</p></div>
-            <div><p className="text-2xl font-semibold tabular-nums sm:text-4xl">{walkTime(active ? elapsed : 0)}</p><p className="mt-2 text-xs text-muted-foreground">Tempo em movimento</p></div>
+          <div className="grid grid-cols-2 gap-y-5 rounded-xl border border-border bg-surface py-5 text-center sm:grid-cols-3">
+            <div><p className="text-4xl font-bold tabular-nums text-primary">{walkKm(active?.distanceMeters ?? 0)}</p><p className="mt-2 text-xs text-muted-foreground">Quilômetros</p></div>
+            <div className="border-l border-border"><p className="text-2xl font-semibold tabular-nums sm:text-3xl">{walkTime(active ? elapsed : 0)}</p><p className="mt-2 text-xs text-muted-foreground">Tempo ativo</p></div>
+            <div className="col-span-2 border-t border-border pt-4 sm:col-span-1 sm:border-l sm:border-t-0 sm:pt-0"><p className="text-2xl font-semibold tabular-nums sm:text-3xl">{walkPace(active?.distanceMeters ?? 0, active ? elapsed : 0)}</p><p className="mt-2 text-xs text-muted-foreground">Ritmo médio · min/km</p></div>
           </div>
-          <WalkingMap points={active?.points ?? []} online={online} />
+          <WalkingMap points={active?.points ?? []} online={online} live={running} />
           <div className="flex gap-3">
             <Button className="h-12 flex-1" disabled={!ready} onClick={running || locating ? pause : start}>{locating ? <Loader2 className="animate-spin" /> : running ? <Pause /> : <Play />}{locating ? "Cancelar busca do GPS" : running ? "Pausar" : active ? "Retomar caminhada" : "Iniciar caminhada"}</Button>
             {active && <Button className="h-12" variant="outline" onClick={() => { void finish().then(() => toast.success("Caminhada salva")).catch(() => toast.error("Não foi possível salvar. Tente novamente.")); }}><Square />Finalizar</Button>}
           </div>
-          {error && <div role="alert" className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-border p-3 text-sm text-warning"><p className="min-w-0 flex-1">{error}</p><Button size="sm" variant="ghost" onClick={retry} disabled={!online || syncing} aria-label="Tentar sincronizar"><RefreshCw /></Button></div>}
-          <p className="text-xs leading-relaxed text-muted-foreground">Ligue a localização do celular e permita o acesso ao iniciar. O GPS registra quilômetros e percurso mesmo sem internet, com os pontos salvos neste aparelho. O mapa não exibe ruas. Mantenha o app aberto e a tela ligada: ao sair ou bloquear a tela, a gravação é pausada. Para usar sem conexão, entre na sua conta e abra esta página antes de sair; o histórico é enviado à conta quando a internet voltar.</p>
+          {error && <div role="alert" className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-border p-3 text-sm text-warning"><p className="min-w-0 flex-1">{error}</p><Button size="sm" variant="ghost" onClick={retry} disabled={!ready || syncing} aria-label="Tentar salvar no aparelho"><RefreshCw /></Button></div>}
+          <div className="space-y-2 rounded-lg border border-border bg-surface p-4 text-xs leading-relaxed text-muted-foreground">
+            <p>Ligue a localização e permita o acesso ao iniciar. O GPS registra o percurso sem internet, com marcas a cada quilômetro. O círculo indica a precisão do último ponto. Arraste para explorar e use o botão de localização para voltar a acompanhar.</p>
+            <p>O tempo ativo inclui paradas enquanto a gravação estiver ligada; use Pausar quando descansar. Trechos separados por pausa ou perda prolongada de sinal não somam distância entre si.</p>
+            <p>Antes de sair, entre na sua conta e carregue esta página na versão publicada com internet. Após a primeira abertura, recarregue ainda conectado para preparar o acesso offline. As caminhadas ficam neste navegador, separadas por conta; limpar os dados do site apaga o histórico local.</p>
+            <p>O mapa não exibe ruas. O app tenta manter a tela ligada quando o celular permite. Ao bloquear a tela ou trocar de aplicativo, a gravação pausa: retome ao voltar.</p>
+          </div>
         </section>
         <WalkingHistory />
       </>}

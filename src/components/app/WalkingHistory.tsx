@@ -20,11 +20,11 @@ export function WalkingHistory({ compact = false }: { compact?: boolean }) {
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div><p className="text-sm font-medium">{new Date(walk.startedAt).toLocaleDateString("pt-BR", { day: "numeric", month: "long", year: "numeric" })}</p>
             <p className="mt-1 text-sm text-muted-foreground">{walkKm(walk.distanceMeters)} km · {walkTime(walk.durationSeconds)}</p>
-            <p className="mt-2 flex items-center gap-1.5 text-xs text-muted-foreground">{walk.synced ? <Cloud className="size-3.5" /> : <CloudOff className="size-3.5" />}{walk.synced ? "Salva na conta" : "Salva no aparelho · sincronização pendente"}</p>
+            <p className="mt-2 flex items-center gap-1.5 text-xs text-muted-foreground">{walk.synced ? <Cloud className="size-3.5" /> : <CloudOff className="size-3.5" />}{walk.synced ? "Salva na conta e neste aparelho" : "Salva neste aparelho · disponível offline"}</p>
           </div>
           <Button size="sm" variant="outline" aria-expanded={selected === walk.id} onClick={() => setSelected(selected === walk.id ? null : walk.id)}>Percurso <ChevronDown /></Button>
         </div>
-        {selected === walk.id && <div className="mt-4"><WalkingMap points={walk.points} online={online} /></div>}
+        {selected === walk.id && <div className="mt-4"><WalkingMap points={walk.points} online={online} finished /></div>}
       </article>)}</div>}
   </section>;
 }

@@ -1,9 +1,7 @@
 import { createContext, useContext, useEffect, useRef, useState, type ReactNode } from "react";
-import { supabase } from "@/integrations/supabase/client";
 import { useSession } from "@/hooks/useSession";
-import { appendPoint, type Walk, type WalkPoint } from "./walking";
+import { acceptPoint, appendPoint, type Walk, type WalkPoint } from "./walking";
 import { readWalks, writeWalks } from "./walking-storage";
-import type { Json } from "@/integrations/supabase/types";
 
 interface WalkingContext {
   walks: Walk[]; active: Walk | undefined; running: boolean; elapsed: number;
@@ -29,7 +27,6 @@ export function WalkingProvider({ children }: { children: ReactNode }) {
   const watch = useRef<number | null>(null);
   const since = useRef<number | null>(null);
   const segment = useRef(0);
-  const busy = useRef(false);
   const loaded = useRef(false);
   const writes = useRef<Promise<void>>(Promise.resolve());
   const wake = useRef<WakeLockSentinel | null>(null);
@@ -66,36 +63,17 @@ export function WalkingProvider({ children }: { children: ReactNode }) {
 
   async function sync() {
     const account = uid.current;
-    if (!account || !loaded.current || !navigator.onLine || busy.current) return;
-    busy.current = true;
+    if (!account || !loaded.current) return;
     setSyncing(true);
     try {
+      commit(list.current);
       await writes.current;
-      for (const walk of list.current.filter(w => w.endedAt && !w.synced)) {
-        const { error: saveError } = await supabase.from("walks").upsert({
-          id: walk.id, user_id: account, started_at: walk.startedAt,
-          ended_at: walk.endedAt ?? walk.startedAt,
-          duration_seconds: Math.round(walk.durationSeconds), distance_meters: walk.distanceMeters,
-          points: walk.points as unknown as Json,
-        }, { onConflict: "id", ignoreDuplicates: true });
-        if (saveError) throw saveError;
-        if (uid.current !== account) return;
-        commit(list.current.map(w => w.id === walk.id ? { ...w, synced: true } : w));
-      }
-      const { data, error: readError } = await supabase.from("walks").select("*").eq("user_id", account).order("started_at", { ascending: false });
-      if (readError) throw readError;
-      if (uid.current !== account) return;
-      const merged = new Map(list.current.map(w => [w.id, w]));
-      for (const row of data ?? []) merged.set(row.id, {
-        id: row.id, userId: account, startedAt: row.started_at, endedAt: row.ended_at,
-        durationSeconds: row.duration_seconds, distanceMeters: row.distance_meters,
-        points: row.points as unknown as WalkPoint[], synced: true,
-      });
-      commit([...merged.values()].sort((a, b) => b.startedAt.localeCompare(a.startedAt)));
-      setError("");
+      if (uid.current === account) setError("");
     } catch {
-      if (uid.current === account) setError("A sincronização está pendente. Suas caminhadas permanecem neste aparelho.");
-    } finally { busy.current = false; setSyncing(false); }
+      if (uid.current === account) setError("Não foi possível salvar no aparelho. Libere espaço e tente novamente antes de fechar o app.");
+    } finally {
+      if (uid.current === account) setSyncing(false);
+    }
   }
 
   useEffect(() => {
@@ -114,13 +92,12 @@ export function WalkingProvider({ children }: { children: ReactNode }) {
       setOwner(userId);
       loaded.current = true;
       setGps(saved.some(w => !w.endedAt) ? "Pausado · caminhada recuperada" : "GPS desligado");
-      void sync();
     }).catch(() => setError("Armazenamento indisponível. Permita o armazenamento neste navegador."));
     return () => { cancelled = true; pause(); };
   }, [userId]);
 
   useEffect(() => {
-    const connection = () => { setOnline(navigator.onLine); if (navigator.onLine) void sync(); };
+    const connection = () => { setOnline(navigator.onLine); };
     connection();
     window.addEventListener("online", connection);
     window.addEventListener("offline", connection);
@@ -134,12 +111,11 @@ export function WalkingProvider({ children }: { children: ReactNode }) {
       const current = list.current.find(w => !w.endedAt);
       setElapsed((current?.durationSeconds ?? 0) + (since.current === null ? 0 : (Date.now() - since.current) / 1000));
     }, 1000);
-    const retry = setInterval(() => { if (list.current.some(w => w.endedAt && !w.synced)) void sync(); }, 30000);
     const hide = () => { if (document.hidden) pause(); };
     window.addEventListener("pagehide", pause);
     document.addEventListener("visibilitychange", hide);
     return () => {
-      clearInterval(tick); clearInterval(retry);
+      clearInterval(tick);
       window.removeEventListener("online", connection); window.removeEventListener("offline", connection);
       window.removeEventListener("pagehide", pause); document.removeEventListener("visibilitychange", hide);
       stopWatch();
@@ -156,34 +132,49 @@ export function WalkingProvider({ children }: { children: ReactNode }) {
       durationSeconds: 0, distanceMeters: 0, points: [], synced: false,
     }, ...list.current]);
     segment.current = Math.max(0, ...(current?.points.map(p => p.segment) ?? [])) + 1;
-    const thisSegment = segment.current;
+    let thisSegment = segment.current;
+    let lastSignal: number | null = null;
     const account = userId;
     setLocating(true);
     setGps("Buscando sinal do GPS…");
+    if (navigator.storage?.persist) void navigator.storage.persist().catch(() => {});
     watch.current = navigator.geolocation.watchPosition(position => {
       if (uid.current !== account || segment.current !== thisSegment) return;
-      if (position.coords.accuracy > 50) { setGps("Sinal fraco · buscando GPS"); return; }
-      if (since.current === null) {
-        since.current = Date.now(); setRunning(true); setLocating(false);
-        if ("wakeLock" in navigator) void navigator.wakeLock.request("screen").then(lock => { wake.current = lock; }).catch(() => {});
-      }
-      setGps(`GPS ativo · precisão ${Math.round(position.coords.accuracy)} m`);
-      setError("");
       const point: WalkPoint = { latitude: position.coords.latitude, longitude: position.coords.longitude,
         accuracy: position.coords.accuracy, timestamp: position.timestamp, segment: thisSegment };
+      if (!acceptPoint([], point) || Date.now() - point.timestamp > 30000 || point.timestamp - Date.now() > 5000) {
+        setGps("Sinal fraco · aguardando posição precisa");
+        return;
+      }
+      if (lastSignal !== null && point.timestamp <= lastSignal) return;
+      if (lastSignal !== null && point.timestamp - lastSignal > 30000) {
+        segment.current += 1;
+        thisSegment = segment.current;
+        point.segment = thisSegment;
+      }
+      lastSignal = point.timestamp;
+      if (since.current === null) {
+        since.current = Date.now(); setRunning(true); setLocating(false);
+        if ("wakeLock" in navigator) void navigator.wakeLock.request("screen").then(lock => {
+          if (uid.current !== account || since.current === null || document.hidden) {
+            void lock.release().catch(() => {});
+          } else { wake.current = lock; }
+        }).catch(() => {});
+      }
+      setGps(`GPS ativo · precisão ±${Math.round(position.coords.accuracy)} m`);
       commit(list.current.map(w => w.endedAt ? w : appendPoint(w, point)));
     }, failure => {
+      if (uid.current !== account || segment.current !== thisSegment) return;
       if (failure.code === 1) {
         pause();
         setError("Localização bloqueada. Ligue a localização do celular e permita o acesso à localização deste app no navegador.");
       } else {
         const hasStarted = since.current !== null;
-        setGps(hasStarted ? "Aguardando sinal GPS · tempo continua" : "Aguardando o primeiro sinal GPS");
-        setError(hasStarted
-          ? "Sinal GPS indisponível. O tempo continua, mas a distância aguarda novas posições. Confira se a localização do celular está ligada."
-          : "Ligue a localização do celular e aguarde em um local aberto. O tempo e os quilômetros começam com o primeiro sinal GPS, mesmo sem internet.");
+        setGps(hasStarted
+          ? "Sem sinal GPS · tempo continua, distância aguardando"
+          : "Buscando GPS · ligue a localização e aguarde em local aberto");
       }
-    }, { enableHighAccuracy: true, maximumAge: 0, timeout: 20000 });
+    }, { enableHighAccuracy: true, maximumAge: 0, timeout: 15000 });
   }
 
   async function finish() {
@@ -191,7 +182,6 @@ export function WalkingProvider({ children }: { children: ReactNode }) {
     setError("");
     commit(list.current.map(w => w.endedAt ? w : { ...w, endedAt: new Date().toISOString(), durationSeconds: Math.round(w.durationSeconds) }));
     await writes.current;
-    void sync();
   }
   const visible = owner === userId && userId ? walks : [];
   return <Context.Provider value={{ walks: visible, active: visible.find(w => !w.endedAt), running,

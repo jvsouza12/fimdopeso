@@ -1,3 +1,4 @@
+import { getDistance } from "geolib";
 import type { WalkPoint } from "./walking";
 
 const EARTH_RADIUS = 6378137;
@@ -30,4 +31,32 @@ export function routeSegments(points: MapPoint[]) {
     else last.push(point);
   });
   return segments;
+}
+
+/** Kilometer crossings use the same distance calculation as the recorder. */
+export function kilometreMarks(points: WalkPoint[]) {
+  const projected = projectWalk(points).points;
+  const marks: (MapPoint & { km: number })[] = [];
+  let distance = 0;
+  let next = 1000;
+  for (let index = 1; index < points.length; index += 1) {
+    const previous = points[index - 1];
+    const point = points[index];
+    if (previous.segment !== point.segment) continue;
+    const length = getDistance(previous, point, 0.1);
+    if (!Number.isFinite(length) || length <= 0) continue;
+    while (next <= distance + length) {
+      const fraction = (next - distance) / length;
+      const a = projected[index - 1], b = projected[index];
+      marks.push({
+        x: a.x + (b.x - a.x) * fraction,
+        y: a.y + (b.y - a.y) * fraction,
+        segment: point.segment,
+        km: next / 1000,
+      });
+      next += 1000;
+    }
+    distance += length;
+  }
+  return marks;
 }
