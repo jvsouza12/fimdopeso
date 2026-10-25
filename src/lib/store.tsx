@@ -3,8 +3,18 @@ import { FOODS } from "@/data/foods";
 import type { AppState, Food, LogEntry } from "./types";
 import { scaleFood } from "./nutrition";
 import { todayKey } from "./date";
+import { useSession } from "@/hooks/useSession";
 
+// O armazenamento legado compartilhado fica preservado, sem atribuição automática.
 const KEY = "nutriplan.state.v1";
+
+function AccountLoading() {
+  return (
+    <div className="flex min-h-screen items-center justify-center bg-background px-4 text-foreground" role="status" aria-live="polite">
+      <p className="text-sm text-muted-foreground">Carregando seus dados…</p>
+    </div>
+  );
+}
 
 export const initialState: AppState = {
   version: 1,
@@ -44,6 +54,7 @@ export const initialState: AppState = {
 interface Ctx {
   state: AppState;
   hydrated: boolean;
+  accountId: string | null;
   update: (fn: (draft: AppState) => AppState) => void;
   reset: () => void;
   allFoods: Food[];
@@ -70,12 +81,26 @@ interface Ctx {
 const StoreContext = createContext<Ctx | null>(null);
 
 export function StoreProvider({ children }: { children: ReactNode }) {
-  const [state, setState] = useState<AppState>(initialState);
+  const { session, loading } = useSession();
+  if (loading) return <AccountLoading />;
+  const accountId = session?.user.id ?? null;
+
+  // Remontar também encerra os efeitos e diálogos vinculados à conta anterior.
+  return (
+    <AccountStoreProvider key={accountId ?? "guest"} accountId={accountId}>
+      {children}
+    </AccountStoreProvider>
+  );
+}
+
+function AccountStoreProvider({ children, accountId }: { children: ReactNode; accountId: string | null }) {
+  const storageKey = accountId ? `${KEY}:account:${accountId}` : `${KEY}:guest`;
+  const [state, setState] = useState<AppState>(() => structuredClone(initialState));
   const [hydrated, setHydrated] = useState(false);
 
   useEffect(() => {
     try {
-      const raw = localStorage.getItem(KEY);
+      const raw = localStorage.getItem(storageKey);
       if (raw) {
         const saved = JSON.parse(raw) as AppState;
         setState({
@@ -88,27 +113,27 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       /* ignora dados corrompidos */
     }
     setHydrated(true);
-  }, []);
+  }, [storageKey]);
 
   useEffect(() => {
     if (!hydrated) return;
     try {
-      localStorage.setItem(KEY, JSON.stringify(state));
+      localStorage.setItem(storageKey, JSON.stringify(state));
     } catch {
       /* quota */
     }
     const root = document.documentElement;
     root.classList.toggle("dark", state.settings.theme === "dark");
-  }, [state, hydrated]);
+  }, [state, hydrated, storageKey]);
 
   const update = useCallback((fn: (draft: AppState) => AppState) => {
     setState((prev) => fn(structuredClone(prev)));
   }, []);
 
   const reset = useCallback(() => {
-    localStorage.removeItem(KEY);
-    setState(initialState);
-  }, []);
+    localStorage.removeItem(storageKey);
+    setState(structuredClone(initialState));
+  }, [storageKey]);
 
   const allFoods = useMemo(() => [...state.customFoods, ...FOODS], [state.customFoods]);
 
@@ -131,11 +156,11 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   );
 
   const value = useMemo(
-    () => ({ state, hydrated, update, reset, allFoods, addLog }),
-    [state, hydrated, update, reset, allFoods, addLog],
+    () => ({ state, hydrated, accountId, update, reset, allFoods, addLog }),
+    [state, hydrated, accountId, update, reset, allFoods, addLog],
   );
 
-  return <StoreContext.Provider value={value}>{children}</StoreContext.Provider>;
+  return <StoreContext.Provider value={value}>{hydrated ? children : <AccountLoading />}</StoreContext.Provider>;
 }
 
 export function useStore() {

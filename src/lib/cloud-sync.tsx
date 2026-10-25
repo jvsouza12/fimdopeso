@@ -3,7 +3,6 @@ import { toast } from "sonner";
 import { useServerFn } from "@tanstack/react-start";
 import { getCloudState, saveCloudState } from "@/lib/sync.functions";
 import { useStore, initialState } from "@/lib/store";
-import { useSession } from "@/hooks/useSession";
 import type { AppState } from "@/lib/types";
 import {
   AlertDialog,
@@ -28,9 +27,10 @@ interface SyncMeta {
   savedHash: string;
 }
 
-function loadMeta(): SyncMeta | null {
+function loadMeta(userId: string): SyncMeta | null {
   try {
-    return JSON.parse(localStorage.getItem(META_KEY) ?? "null") as SyncMeta | null;
+    const meta = JSON.parse(localStorage.getItem(`${META_KEY}:${userId}`) ?? "null") as SyncMeta | null;
+    return meta?.userId === userId ? meta : null;
   } catch {
     return null;
   }
@@ -38,7 +38,7 @@ function loadMeta(): SyncMeta | null {
 
 function saveMeta(meta: SyncMeta) {
   try {
-    localStorage.setItem(META_KEY, JSON.stringify(meta));
+    localStorage.setItem(`${META_KEY}:${meta.userId}`, JSON.stringify(meta));
   } catch {
     /* quota */
   }
@@ -123,9 +123,8 @@ function mergeStates(local: AppState, remote: AppState): AppState {
  * desde a última sincronização, pergunta ao usuário o que fazer.
  */
 export function CloudSync() {
-  const { state, hydrated, update } = useStore();
-  const { session } = useSession();
-  const userId = session?.user.id ?? null;
+  // A identidade deve ser a mesma que carregou o estado local deste provider.
+  const { state, hydrated, update, accountId: userId } = useStore();
 
   const loadCloud = useServerFn(getCloudState);
   const saveCloud = useServerFn(saveCloudState);
@@ -180,7 +179,7 @@ export function CloudSync() {
         if (cancelled) return;
         const remote = res.state ? (JSON.parse(res.state) as AppState) : null;
         const local = stateRef.current;
-        const meta = loadMeta();
+        const meta = loadMeta(userId);
         const knownRemote = meta && meta.userId === userId ? meta.remoteUpdatedAt : null;
         const localChanged = !meta || meta.userId !== userId || meta.savedHash !== JSON.stringify(local);
         const remoteChanged = res.updatedAt !== knownRemote;
