@@ -10,6 +10,6 @@
 <!-- LOVABLE:END -->
 
 - Walking records use a dedicated owner-scoped database table and account-keyed IndexedDB outbox; GPS routes must never enter the shared nutrition state, preventing cross-account merging.
-- WalkingProvider owns GPS and active sessions across navigation; backgrounding pauses tracking because browser geolocation cannot guarantee locked-screen recording.
+- WalkingProvider owns GPS and active sessions across navigation; recording keeps running in the background and the active timer pauses automatically whenever no fresh GPS fix arrives for 45 seconds.
 - Offline support uses vite-plugin-pwa generateSW and a single guarded registration wrapper; never cache auth/RPC responses or Google Maps resources.
 - Walking maps render saved GPS coordinates locally in all connectivity states without street tiles or external map SDKs, eliminating network dependence and preserving account-scoped route storage.
