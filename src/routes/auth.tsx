@@ -29,92 +29,191 @@ export const Route = createFileRoute("/auth")({
   component: AuthPage,
 });
 
-const credentialsSchema = z.object({
+const loginSchema = z.object({
   email: z.string().trim().email("Informe um e-mail válido").max(255),
-  password: z.string().min(8, "A senha precisa ter ao menos 8 caracteres").max(72),
+  password: z.string().min(1, "Digite sua senha").max(72),
 });
 
-const signupPasswordSchema = z
-  .string()
-  .min(8, "Use pelo menos 8 caracteres")
-  .max(72)
-  .regex(/[A-Za-zÀ-ÿ]/, "Inclua pelo menos uma letra")
-  .regex(/[0-9]/, "Inclua pelo menos um número");
+const signupSchema = z.object({
+  email: z.string().trim().email("Informe um e-mail válido").max(255),
+  password: z
+    .string()
+    .min(8, "Use pelo menos 8 caracteres")
+    .max(72, "Use no máximo 72 caracteres")
+    .regex(/[A-Za-zÀ-ÿ]/, "Inclua pelo menos uma letra")
+    .regex(/[0-9]/, "Inclua pelo menos um número"),
+});
+
+/** Traduz as mensagens do serviço de contas para algo que a pessoa entende. */
+function friendlyError(raw: string): { text: string; description?: string; needsConfirmation?: boolean } {
+  const message = raw.toLowerCase();
+  if (message.includes("invalid login credentials")) {
+    return { text: "E-mail ou senha incorretos", description: "Confira os dados ou use “Esqueci minha senha”." };
+  }
+  if (message.includes("email not confirmed")) {
+    return { text: "Confirme seu e-mail para entrar", needsConfirmation: true };
+  }
+  if (
+    message.includes("already registered") ||
+    message.includes("user already exists") ||
+    message.includes("email address is already")
+  ) {
+    return { text: "Este e-mail já tem conta", description: "Use “Entrar” ou recupere a senha." };
+  }
+  if (message.includes("rate limit") || message.includes("too many") || message.includes("security purposes")) {
+    return { text: "Muitas tentativas em pouco tempo", description: "Aguarde alguns segundos e tente novamente." };
+  }
+  if (message.includes("password should") || message.includes("weak password") || message.includes("password is too weak")) {
+    return { text: "Escolha uma senha mais forte", description: "Use pelo menos 8 caracteres, com letras e números." };
+  }
+  if (message.includes("invalid email") || message.includes("unable to validate email")) {
+    return { text: "Informe um e-mail válido" };
+  }
+  if (message.includes("failed to fetch") || message.includes("networkerror") || message.includes("network error")) {
+    return { text: "Sem conexão com o servidor", description: "Verifique sua internet e tente novamente." };
+  }
+  return { text: raw };
+}
 
 function AuthPage() {
   const [mode, setMode] = useState<"login" | "signup">("login");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [confirmation, setConfirmation] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [sent, setSent] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
+  const [sent, setSent] = useState(false);
+  const [sentReason, setSentReason] = useState<"created" | "confirm">("created");
+  const [resending, setResending] = useState(false);
+  const [resendIn, setResendIn] = useState(0);
   const { session } = useSession();
-  const { state, hydrated } = useStore();
+  const { hydrated } = useStore();
   const navigate = useNavigate();
 
+  // Quem já está logado não fica preso na tela de entrada.
   useEffect(() => {
-    if (session && hydrated) navigate({ to: state.onboarded ? "/" : "/comecar", replace: true });
-  }, [session, hydrated, state.onboarded, navigate]);
+    if (session && hydrated) void navigate({ to: "/", replace: true });
+  }, [session, hydrated, navigate]);
 
-  const submit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    const parsed = credentialsSchema.safeParse({ email, password });
+  useEffect(() => {
+    if (resendIn <= 0) return;
+    const timer = setTimeout(() => setResendIn((value) => value - 1), 1000);
+    return () => clearTimeout(timer);
+  }, [resendIn]);
+
+  const submit = async (event: React.FormEvent) => {
+    event.preventDefault();
+    if (loading) return;
+
+    if (mode === "signup") {
+      const parsed = signupSchema.safeParse({ email, password });
+      if (!parsed.success) {
+        toast.error(parsed.error.issues[0]?.message ?? "Dados inválidos");
+        return;
+      }
+      if (password !== confirmation) {
+        toast.error("As duas senhas precisam ser iguais");
+        return;
+      }
+
+      setLoading(true);
+      try {
+        const { data, error } = await supabase.auth.signUp({
+          email: parsed.data.email,
+          password: parsed.data.password,
+          options: { emailRedirectTo: `${window.location.origin}/` },
+        });
+        if (error) throw error;
+
+        if (!data.session) {
+          // Sem sessão: ou falta confirmar o e-mail, ou o e-mail já existia.
+          const alreadyRegistered = (data.user?.identities?.length ?? 0) === 0;
+          setSentReason(alreadyRegistered ? "confirm" : "created");
+          setSent(true);
+          if (alreadyRegistered) {
+            toast.info("Este e-mail já tem conta", {
+              description: "Tente entrar ou usar “Esqueci minha senha”.",
+            });
+          } else {
+            toast.success("Conta criada! Confirme o e-mail para entrar.");
+          }
+          return;
+        }
+
+        setPassword("");
+        setConfirmation("");
+        toast.success("Conta criada com sucesso");
+        await navigate({ to: "/", replace: true });
+      } catch (err) {
+        const raw = err instanceof Error ? err.message : "Não foi possível continuar";
+        const info = friendlyError(raw);
+        if (info.needsConfirmation) {
+          setSentReason("confirm");
+          setSent(true);
+        }
+        toast.error(info.text, info.description ? { description: info.description } : undefined);
+      } finally {
+        setLoading(false);
+      }
+      return;
+    }
+
+    const parsed = loginSchema.safeParse({ email, password });
     if (!parsed.success) {
       toast.error(parsed.error.issues[0]?.message ?? "Dados inválidos");
       return;
     }
-    if (mode === "signup") {
-      const passwordResult = signupPasswordSchema.safeParse(parsed.data.password);
-      if (!passwordResult.success) {
-        toast.error(passwordResult.error.issues[0]?.message ?? "Senha inválida");
-        return;
-      }
-    }
 
     setLoading(true);
     try {
-      if (mode === "signup") {
-        const { data, error } = await supabase.auth.signUp({
-          email: parsed.data.email,
-          password: parsed.data.password,
-          options: {
-            emailRedirectTo: window.location.origin,
-          },
-        });
-        if (error) throw error;
-        if (!data.session) {
-          setSent(true);
-          toast.success("Conta criada! Confirme o e-mail para entrar.");
-          return;
-        }
-        toast.success("Conta criada com sucesso");
-        await navigate({ to: "/comecar", replace: true });
-      } else {
-        const { error } = await supabase.auth.signInWithPassword({
-          email: parsed.data.email,
-          password: parsed.data.password,
-        });
-        if (error) throw error;
-        toast.success("Bem-vindo de volta!");
-        await navigate({ to: state.onboarded ? "/" : "/comecar", replace: true });
-      }
+      const { error } = await supabase.auth.signInWithPassword({
+        email: parsed.data.email,
+        password: parsed.data.password,
+      });
+      if (error) throw error;
+      toast.success("Bem-vindo de volta!");
+      await navigate({ to: "/", replace: true });
     } catch (err) {
-      const msg = err instanceof Error ? err.message : "Não foi possível continuar";
-      toast.error(
-        msg.includes("Invalid login credentials")
-          ? "E-mail ou senha incorretos"
-          : msg.includes("already registered")
-            ? "Este e-mail já tem conta. Faça login."
-            : msg,
-      );
+      const raw = err instanceof Error ? err.message : "Não foi possível continuar";
+      const info = friendlyError(raw);
+      if (info.needsConfirmation) {
+        setSentReason("confirm");
+        setSent(true);
+      }
+      toast.error(info.text, info.description ? { description: info.description } : undefined);
     } finally {
       setLoading(false);
     }
   };
 
+  const resend = async () => {
+    if (resending || resendIn > 0) return;
+    const parsed = z.string().trim().email().safeParse(email);
+    if (!parsed.success) {
+      toast.error("Informe o e-mail usado no cadastro");
+      return;
+    }
+    setResending(true);
+    try {
+      const { error } = await supabase.auth.resend({
+        type: "signup",
+        email: parsed.data,
+        options: { emailRedirectTo: `${window.location.origin}/` },
+      });
+      if (error) throw error;
+      toast.success("Enviamos um novo link de confirmação");
+      setResendIn(60);
+    } catch (err) {
+      const raw = err instanceof Error ? err.message : "Não foi possível reenviar agora";
+      toast.error(friendlyError(raw).text);
+    } finally {
+      setResending(false);
+    }
+  };
+
   const reset = async () => {
-    const parsed = z.string().email().safeParse(email.trim());
+    const parsed = z.string().trim().email().safeParse(email);
     if (!parsed.success) {
       toast.error("Informe seu e-mail para recuperar a senha");
       return;
@@ -122,11 +221,12 @@ function AuthPage() {
     const { error } = await supabase.auth.resetPasswordForEmail(parsed.data, {
       redirectTo: `${window.location.origin}/reset-password`,
     });
-    if (error) toast.error(error.message);
+    if (error) toast.error(friendlyError(error.message).text);
     else toast.success("Enviamos um link de redefinição para seu e-mail");
   };
 
   const signInWithGoogle = async () => {
+    if (googleLoading) return;
     setGoogleLoading(true);
     try {
       const result = await lovable.auth.signInWithOAuth("google", {
@@ -197,6 +297,7 @@ function AuthPage() {
               onClick={() => {
                 setMode("login");
                 setSent(false);
+                setConfirmation("");
               }}
             >
               Entrar
@@ -220,17 +321,42 @@ function AuthPage() {
                 <Mail className="size-5" />
               </span>
               <div>
-                <h2 className="font-semibold">Confira seu e-mail</h2>
+                <h2 className="font-semibold">
+                  {sentReason === "created" ? "Confira seu e-mail" : "Confirme seu e-mail para entrar"}
+                </h2>
                 <p className="mt-2 text-sm leading-6 text-muted-foreground">
-                  Enviamos um link de confirmação para <strong className="text-foreground">{email}</strong>.
+                  {sentReason === "created" ? (
+                    <>
+                      Enviamos um link de confirmação para <strong className="text-foreground">{email}</strong>.
+                    </>
+                  ) : (
+                    <>
+                      A conta <strong className="text-foreground">{email}</strong> ainda não foi confirmada. Reenvie o link
+                      abaixo para receber um novo.
+                    </>
+                  )}
+                </p>
+                <p className="mt-2 text-xs leading-5 text-muted-foreground">
+                  O link vale por alguns minutos. Se não encontrar a mensagem, confira a pasta de spam.
                 </p>
               </div>
-              <Button variant="outline" className="w-full" onClick={() => setSent(false)}>
-                Voltar para o cadastro
+              <Button className="w-full" variant="secondary" onClick={resend} disabled={resending || resendIn > 0}>
+                {resending ? <Loader2 className="animate-spin" /> : <Mail />}
+                {resendIn > 0 ? `Reenviar em ${resendIn}s` : "Reenviar link de confirmação"}
+              </Button>
+              <Button
+                variant="outline"
+                className="w-full"
+                onClick={() => {
+                  setSent(false);
+                  setMode("login");
+                }}
+              >
+                Já confirmei, quero entrar
               </Button>
             </div>
           ) : (
-            <form onSubmit={submit} className="mt-6 space-y-5">
+            <form onSubmit={submit} className="mt-6 space-y-5" aria-busy={loading}>
               <div className="space-y-2">
                 <Label htmlFor="email">E-mail</Label>
                 <div className="relative">
@@ -239,11 +365,13 @@ function AuthPage() {
                     id="email"
                     type="email"
                     autoComplete="email"
+                    inputMode="email"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     placeholder="seuemail@exemplo.com"
                     className="h-12 pl-10"
                     maxLength={255}
+                    disabled={loading}
                     required
                   />
                 </div>
@@ -269,6 +397,7 @@ function AuthPage() {
                     placeholder={mode === "login" ? "Digite sua senha" : "8 caracteres, com letra e número"}
                     className="h-12 px-10"
                     maxLength={72}
+                    disabled={loading}
                     required
                   />
                   <Button
@@ -285,6 +414,27 @@ function AuthPage() {
                 </div>
                 {mode === "signup" && <p className="text-xs text-muted-foreground">Números podem se repetir; basta incluir uma letra.</p>}
               </div>
+
+              {mode === "signup" && (
+                <div className="space-y-2">
+                  <Label htmlFor="password-confirmation">Repita a senha</Label>
+                  <div className="relative">
+                    <LockKeyhole className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+                    <Input
+                      id="password-confirmation"
+                      type={showPassword ? "text" : "password"}
+                      autoComplete="new-password"
+                      value={confirmation}
+                      onChange={(e) => setConfirmation(e.target.value)}
+                      placeholder="Digite a mesma senha"
+                      className="h-12 pl-10"
+                      maxLength={72}
+                      disabled={loading}
+                      required
+                    />
+                  </div>
+                </div>
+              )}
 
               <Button type="submit" size="lg" className="h-12 w-full" disabled={loading}>
                 {loading ? <Loader2 className="animate-spin" /> : mode === "login" ? "Entrar na minha conta" : "Criar conta e continuar"}
@@ -305,7 +455,7 @@ function AuthPage() {
             size="lg"
             className="h-12 w-full gap-3"
             onClick={signInWithGoogle}
-            disabled={googleLoading}
+            disabled={googleLoading || loading}
           >
             {googleLoading ? (
               <Loader2 className="animate-spin" />
