@@ -134,6 +134,8 @@ export function WalkingProvider({ children }: { children: ReactNode }) {
       loaded.current = true;
       setElapsed(saved.find(w => !w.endedAt)?.durationSeconds ?? 0);
       setGps(saved.some(w => !w.endedAt) ? "Pausado · caminhada recuperada" : "GPS desligado");
+      // Inclui também os registros anteriores na fila local, sem marcar envio à nuvem.
+      void sync();
     }).catch(() => {
       if (!cancelled && uid.current === userId) setError("Armazenamento indisponível. Permita o armazenamento neste navegador.");
     });
@@ -141,7 +143,11 @@ export function WalkingProvider({ children }: { children: ReactNode }) {
   }, [userId, loadAttempt]);
 
   useEffect(() => {
-    const connection = () => { setOnline(navigator.onLine); };
+    const connection = () => {
+      setOnline(navigator.onLine);
+      // Retenta a persistência local; conexão não equivale a backup remoto.
+      if (navigator.onLine) void sync();
+    };
     connection();
     window.addEventListener("online", connection);
     window.addEventListener("offline", connection);
