@@ -12,7 +12,9 @@ interface WalkingContext {
   ready: boolean; online: boolean; gps: string; error: string; syncing: boolean; locating: boolean;
   saveStatus: "idle" | "saving" | "saved" | "error"; savedAt: number | null;
   cloudStatus: CloudStatus; cloudPending: number; cloudMessage: string;
+  accuracy: number | null; milestone: number | null; clearMilestone: () => void;
   start: () => void; pause: () => void; finish: () => Promise<void>; retry: () => void;
+  discard: () => Promise<void>;
   remove: (id: string) => Promise<void>; syncCloud: () => void;
 }
 const Context = createContext<WalkingContext | null>(null);
@@ -72,6 +74,13 @@ export function WalkingProvider({ children }: { children: ReactNode }) {
   const [cloudStatus, setCloudStatus] = useState<CloudStatus>("idle");
   const [cloudPending, setCloudPending] = useState(0);
   const [cloudMessage, setCloudMessage] = useState("");
+  const [accuracy, setAccuracy] = useState<number | null>(null);
+  const [milestone, setMilestone] = useState<number | null>(null);
+  /** Marca o último quilômetro já avisado, para não repetir a vibração. */
+  const lastKm = useRef(0);
+  /** Verdadeiro quando a pessoa quer gravar; falso em pausa manual ou finalização. */
+  const wanted = useRef(false);
+  const retryTimer = useRef<number | null>(null);
   const cloudBusy = useRef(false);
   const saveRevision = useRef(0);
   const [loadAttempt, setLoadAttempt] = useState(0);
@@ -125,9 +134,14 @@ export function WalkingProvider({ children }: { children: ReactNode }) {
 
   function stopWatch() {
     token.current += 1;
+    if (retryTimer.current !== null) {
+      window.clearTimeout(retryTimer.current);
+      retryTimer.current = null;
+    }
     if (watch.current !== null) navigator.geolocation.clearWatch(watch.current);
     watch.current = null;
     setLocating(false);
+    setAccuracy(null);
     releaseWake();
   }
 
@@ -146,6 +160,7 @@ export function WalkingProvider({ children }: { children: ReactNode }) {
   }
 
   function pause() {
+    wanted.current = false;
     flush();
     stopWatch();
     segment.current += 1;
@@ -272,6 +287,10 @@ export function WalkingProvider({ children }: { children: ReactNode }) {
     setCloudStatus("idle");
     setCloudPending(0);
     setCloudMessage("");
+    setAccuracy(null);
+    setMilestone(null);
+    wanted.current = false;
+    lastKm.current = 0;
     uid.current = userId;
     loaded.current = false;
     list.current = [];
@@ -374,10 +393,23 @@ export function WalkingProvider({ children }: { children: ReactNode }) {
       }
       setLocating(false);
       setAutoPaused(false);
+      setAccuracy(position.coords.accuracy);
       setGps(`GPS ativo · precisão ±${Math.round(position.coords.accuracy)} m`);
-      commit(list.current.map(w => w.endedAt ? w : appendPoint(w, point)));
+      const next = list.current.map(w => w.endedAt ? w : appendPoint(w, point));
+      const current = next.find(w => !w.endedAt);
+      if (current) {
+        const done = Math.floor(current.distanceMeters / 1000);
+        if (done > lastKm.current) {
+          lastKm.current = done;
+          setMilestone(done);
+          // Retorno físico a cada quilômetro, como em um relógio de corrida.
+          if (typeof navigator.vibrate === "function") navigator.vibrate([120, 60, 120]);
+        }
+      }
+      commit(next);
     }, failure => {
       if (uid.current !== account || token.current !== mine) return;
+      setAccuracy(null);
       if (failure.code === 1) {
         pause();
         setError("Localização bloqueada. Ligue a localização do celular e permita o acesso à localização deste app no navegador.");
@@ -385,6 +417,19 @@ export function WalkingProvider({ children }: { children: ReactNode }) {
         setGps(since.current !== null
           ? "Sem sinal GPS · pausa automática até o sinal voltar"
           : "Buscando GPS · ligue a localização e aguarde em local aberto");
+        // Erro passageiro (túnel, semáforo, tela bloqueada): reabre a escuta
+        // sozinha para o percurso continuar sem a pessoa precisar tocar em nada.
+        if (wanted.current) {
+          if (watch.current !== null) {
+            navigator.geolocation.clearWatch(watch.current);
+            watch.current = null;
+          }
+          if (retryTimer.current !== null) window.clearTimeout(retryTimer.current);
+          retryTimer.current = window.setTimeout(() => {
+            retryTimer.current = null;
+            if (uid.current === account && wanted.current && watch.current === null) attach();
+          }, 10000);
+        }
       }
     }, { enableHighAccuracy: true, maximumAge: 0, timeout: 15000 });
   }
@@ -394,12 +439,19 @@ export function WalkingProvider({ children }: { children: ReactNode }) {
     if (!window.isSecureContext) { setError("Abra o aplicativo por uma conexão HTTPS para permitir o GPS."); return; }
     if (!("geolocation" in navigator)) { setError("Este navegador não oferece localização."); return; }
     setError("");
+    setMilestone(null);
+    wanted.current = true;
     const current = list.current.find(w => !w.endedAt);
-    if (!current) commit([{
-      id: crypto.randomUUID(), userId, startedAt: new Date().toISOString(), endedAt: null,
-      durationSeconds: 0, distanceMeters: 0, points: [], synced: false,
-    }, ...list.current]);
-    else segment.current = current.points.reduce((max, point) => Math.max(max, point.segment), segment.current);
+    if (!current) {
+      lastKm.current = 0;
+      commit([{
+        id: crypto.randomUUID(), userId, startedAt: new Date().toISOString(), endedAt: null,
+        durationSeconds: 0, distanceMeters: 0, points: [], synced: false,
+      }, ...list.current]);
+    } else {
+      lastKm.current = Math.floor(current.distanceMeters / 1000);
+      segment.current = current.points.reduce((max, point) => Math.max(max, point.segment), segment.current);
+    }
     attach();
   }
 
@@ -409,6 +461,19 @@ export function WalkingProvider({ children }: { children: ReactNode }) {
     commit(list.current.map(w => w.endedAt ? w : { ...w, endedAt: new Date().toISOString(), durationSeconds: Math.round(w.durationSeconds) }));
     await writes.current;
     void syncCloudNow();
+  }
+
+  /** Descarta a caminhada ativa: nada é enviado para a conta. */
+  async function discard() {
+    const current = list.current.find(w => !w.endedAt);
+    pause();
+    if (!current) return;
+    setMilestone(null);
+    lastKm.current = 0;
+    commit(list.current.filter(w => w.id !== current.id));
+    await writes.current;
+    setElapsed(0);
+    setGps("GPS desligado");
   }
 
   async function remove(id: string) {
@@ -423,6 +488,7 @@ export function WalkingProvider({ children }: { children: ReactNode }) {
   return <Context.Provider value={{ walks: visible, active: visible.find(w => !w.endedAt), running, autoPaused,
     elapsed, ready: Boolean(userId && owner === userId), online, gps, error, syncing, locating,
     saveStatus, savedAt, cloudStatus, cloudPending, cloudMessage,
+    accuracy, milestone, clearMilestone: () => setMilestone(null), discard,
     start, pause, finish, remove, syncCloud: () => { void syncCloudNow(); }, retry: () => {
       if (!userId || uid.current !== userId) return;
       if (!loaded.current) {

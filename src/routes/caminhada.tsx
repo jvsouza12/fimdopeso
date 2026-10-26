@@ -1,12 +1,12 @@
 import { useEffect, useRef, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { OfflinePreparation } from "@/components/app/OfflinePreparation";
-import { Footprints, Play, Pause, Square, LocateFixed, Wifi, WifiOff, RefreshCw, Loader2, Flag, Signal, Activity, TimerReset } from "lucide-react";
+import { Footprints, Play, Pause, Square, LocateFixed, Wifi, WifiOff, RefreshCw, Loader2, Flag, Signal, Activity, TimerReset, Gauge, Trash2, X, Trophy } from "lucide-react";
 import { PageHeader } from "@/components/app/AppShell";
 import { Button } from "@/components/ui/button";
 import { useSession } from "@/hooks/useSession";
 import { useWalking } from "@/lib/walking-provider";
-import { walkElevationGain, walkKm, walkLivePace, walkPace, walkTime } from "@/lib/walking";
+import { walkElevationGain, walkKm, walkLivePace, walkLiveSpeed, walkPace, walkTime } from "@/lib/walking";
 import { WalkingMap } from "@/components/app/WalkingMap";
 import { WalkingHistory } from "@/components/app/WalkingHistory";
 import { WalkSplits } from "@/components/app/WalkSplits";
@@ -24,7 +24,7 @@ export const Route = createFileRoute("/caminhada")({
 
 function WalkingPage() {
   const { session, loading } = useSession();
-  const { active, running, autoPaused, locating, elapsed, ready, online, gps, error, syncing, saveStatus, savedAt, cloudStatus, cloudPending, cloudMessage, start, pause, finish, retry, syncCloud } = useWalking();
+  const { active, running, autoPaused, locating, elapsed, ready, online, gps, accuracy, milestone, clearMilestone, error, syncing, saveStatus, savedAt, cloudStatus, cloudPending, cloudMessage, start, pause, finish, discard, retry, syncCloud } = useWalking();
   const [finishing, setFinishing] = useState(false);
   const finishLock = useRef(false);
   async function finishWalk() {
@@ -36,6 +36,21 @@ function WalkingPage() {
       toast.success("Caminhada salva neste aparelho");
     } catch {
       toast.error("A gravação não foi confirmada. Não feche o app e use Tentar novamente.");
+    } finally {
+      finishLock.current = false;
+      setFinishing(false);
+    }
+  }
+  async function discardWalk() {
+    if (finishLock.current) return;
+    if (!window.confirm("Descartar esta caminhada? O percurso gravado neste aparelho será apagado.")) return;
+    finishLock.current = true;
+    setFinishing(true);
+    try {
+      await discard();
+      toast.success("Caminhada descartada");
+    } catch {
+      toast.error("Não foi possível descartar agora. Tente novamente.");
     } finally {
       finishLock.current = false;
       setFinishing(false);
@@ -54,12 +69,14 @@ function WalkingPage() {
   const wall = active ? Math.max(0, (now - new Date(active.startedAt).getTime()) / 1000) : 0;
   const climb = active ? walkElevationGain(active.points) : 0;
   const livePace = active ? walkLivePace(active.points) : "—";
+  const liveSpeed = active ? walkLiveSpeed(active.points) : "—";
   const kmDone = Math.floor(distance / 1000);
   const kmProgress = Math.min(100, ((distance % 1000) / 1000) * 100);
   const nextKm = kmDone + 1;
   const toNextKm = Math.max(0, nextKm * 1000 - distance);
   const statusLabel = locating ? "Buscando sinal" : autoPaused ? "Pausa automática" : running ? "Gravando" : active ? "Pausada" : "Pronta para começar";
   const statusDot = locating ? "bg-sky-400 animate-pulse" : autoPaused ? "bg-amber-400" : running ? "bg-emerald-400 animate-pulse" : active ? "bg-white/40" : "bg-white/25";
+  const signalLabel = accuracy !== null && !autoPaused ? `±${Math.round(accuracy)} m` : locating ? "Buscando" : active ? "Fraco" : "—";
 
   return <div className="space-y-6">
     <PageHeader title="Caminhada" subtitle="Um passo de cada vez." action={<span className="flex items-center gap-1.5 text-xs text-muted-foreground">{online ? <Wifi className="size-4" /> : <WifiOff className="size-4" />}{online ? "Online" : "Sem internet"}</span>} />
@@ -82,6 +99,11 @@ function WalkingPage() {
             </div>
           </div>
 
+          {milestone !== null && <div role="status" className="flex items-center justify-between gap-3 rounded-xl border border-primary/40 bg-primary/10 px-4 py-3 text-sm text-foreground">
+            <p className="flex items-center gap-2 font-semibold"><Trophy className="size-4 text-primary" />Quilômetro {milestone} concluído!</p>
+            <Button size="icon" variant="ghost" aria-label="Fechar aviso do quilômetro" onClick={clearMilestone}><X /></Button>
+          </div>}
+
           {active && <div className="rounded-xl border border-border bg-surface p-4">
             <div className="flex items-center justify-between text-xs text-muted-foreground">
               <span className="flex items-center gap-1.5"><Flag className="size-3.5 text-primary" />Próximo marco: km {nextKm}</span>
@@ -94,10 +116,10 @@ function WalkingPage() {
           </div>}
 
           <div className="grid grid-cols-2 gap-2 text-center sm:grid-cols-4">
+            <div className="rounded-lg border border-border bg-surface px-2 py-3"><p className="flex items-center justify-center gap-1 text-sm font-semibold tabular-nums"><Gauge className="size-3.5 text-primary" />{liveSpeed}</p><p className="mt-1 text-xs text-muted-foreground">km/h agora</p></div>
             <div className="rounded-lg border border-border bg-surface px-2 py-3"><p className="flex items-center justify-center gap-1 text-sm font-semibold tabular-nums"><Activity className="size-3.5 text-primary" />{livePace}</p><p className="mt-1 text-xs text-muted-foreground">Ritmo atual</p></div>
             <div className="rounded-lg border border-border bg-surface px-2 py-3"><p className="flex items-center justify-center gap-1 text-sm font-semibold tabular-nums"><TimerReset className="size-3.5 text-primary" />{walkTime(active ? wall : 0)}</p><p className="mt-1 text-xs text-muted-foreground">Tempo decorrido</p></div>
-            <div className="rounded-lg border border-border bg-surface px-2 py-3"><p className="flex items-center justify-center gap-1 text-sm font-semibold tabular-nums"><Flag className="size-3.5 text-primary" />{kmDone}</p><p className="mt-1 text-xs text-muted-foreground">Marcos de km</p></div>
-            <div className="rounded-lg border border-border bg-surface px-2 py-3"><p className="flex items-center justify-center gap-1 text-sm font-semibold"><Signal className="size-3.5 text-primary" />{locating ? "Buscando" : autoPaused ? "Fraco" : active ? "Bom" : "—"}</p><p className="mt-1 text-xs text-muted-foreground">Sinal do GPS</p></div>
+            <div className="rounded-lg border border-border bg-surface px-2 py-3"><p className="flex items-center justify-center gap-1 text-sm font-semibold tabular-nums"><Signal className="size-3.5 text-primary" />{signalLabel}</p><p className="mt-1 text-xs text-muted-foreground">Sinal do GPS</p></div>
           </div>
 
           <div className="flex flex-wrap items-center justify-between gap-2 text-sm">
@@ -113,6 +135,7 @@ function WalkingPage() {
           <div className="flex gap-3">
             <Button className="h-12 flex-1" disabled={!ready || finishing} onClick={running || locating ? pause : start}>{locating ? <Loader2 className="animate-spin" /> : running ? <Pause /> : <Play />}{finishing ? "Salvando caminhada…" : locating ? "Cancelar busca do GPS" : running ? "Pausar" : active ? "Retomar caminhada" : "Iniciar caminhada"}</Button>
             {(active || finishing) && <Button className="h-12" variant="outline" disabled={finishing} onClick={() => { void finishWalk(); }}>{finishing ? <Loader2 className="animate-spin" /> : <Square />}{finishing ? "Salvando…" : "Finalizar"}</Button>}
+            {active && <Button className="h-12 w-12" variant="ghost" aria-label="Descartar caminhada" title="Descartar caminhada" disabled={finishing} onClick={() => { void discardWalk(); }}><Trash2 /></Button>}
           </div>
 
           {ready && <div role="status" className="rounded-lg border border-border bg-surface p-3 text-sm text-foreground">
@@ -141,11 +164,11 @@ function WalkingPage() {
           {active && active.points.length > 1 && <WalkSplits walk={active} />}
 
           <div className="space-y-2 rounded-lg border border-border bg-surface p-4 text-xs leading-relaxed text-muted-foreground">
-            <p>Ligue a localização e permita o acesso ao iniciar. O GPS registra o percurso com marcas a cada quilômetro, parciais, ritmo e elevação, tudo sem internet. O círculo indica a precisão do último ponto.</p>
-            <p>O tempo ativo pausa sozinho quando o GPS passa 45 segundos sem entregar posição e volta a contar quando o sinal retorna; trechos separados por pausa ou perda de sinal não somam distância entre si. Use Pausar quando descansar.</p>
+            <p>Ligue a localização e permita o acesso ao iniciar. O GPS registra o percurso com marcas a cada quilômetro, parciais, ritmo, velocidade e elevação, tudo sem internet. Cada quilômetro concluído vibra o aparelho e mostra um aviso na tela. O círculo indica a precisão do último ponto.</p>
+            <p>O tempo ativo pausa sozinho quando o GPS passa 45 segundos sem entregar posição e volta a contar quando o sinal retorna; trechos separados por pausa ou perda de sinal não somam distância entre si. Quando o erro é passageiro, o aplicativo reabre a escuta do GPS sozinho a cada 10 segundos. Use Pausar quando descansar.</p>
             <p>A gravação continua quando você troca de aplicativo ou bloqueia a tela, se o navegador mantiver o GPS rodando em segundo plano. Se o sistema interromper o GPS, o cronômetro não conta e o percurso retoma de onde parou ao abrir de novo.</p>
             <p>Antes de sair, entre na sua conta na versão publicada e deixe o aplicativo aberto com internet para preparar as páginas offline. Mantenha a conta conectada para acessar os dados locais sem internet.</p>
-            <p>O percurso, os quilômetros e o tempo ativo são salvos continuamente neste aparelho, separados por conta. Ao reabrir uma caminhada interrompida, use Retomar caminhada. O tempo com o aplicativo fechado não é adicionado automaticamente.</p>
+            <p>O percurso, os quilômetros e o tempo ativo são salvos continuamente neste aparelho, separados por conta. Ao reabrir uma caminhada interrompida, use Retomar caminhada. O tempo com o aplicativo fechado não é adicionado automaticamente. Use a lixeira para descartar uma caminhada sem enviá-la para a conta.</p>
             <p>As caminhadas concluídas ficam em uma fila local, com percurso, quilômetros e tempo, separada por conta. As exclusões também ficam registradas. Ao voltar à internet, a fila é enviada para a sua conta e as pendências já resolvidas saem do aparelho.</p>
             <p>Com internet e a conta conectada, o aplicativo envia a fila de caminhadas concluídas e as exclusões, e traz de volta os percursos que já estavam na sua conta em outros aparelhos. O indicador Online mostra apenas a conexão; a confirmação do backup aparece no painel Backup na sua conta. Limpar os dados do site apaga o histórico e a fila local, mas o que já foi enviado continua na conta. Cada caminhada concluída pode ser exportada em GPX.</p>
           </div>

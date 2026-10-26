@@ -25,6 +25,11 @@ export interface Walk {
 export const MAX_ACCURACY = 50;
 /** Intervalo sem posição aceita (ms) que dispara a pausa automática. */
 export const SIGNAL_GAP = 45000;
+/**
+ * Velocidade máxima aceita (m/s). Cobre corrida e pedalada leve, mas continua
+ * recusando saltos impossíveis causados por erro de posição.
+ */
+export const MAX_SPEED = 9;
 
 export function acceptPoint(points: WalkPoint[], point: WalkPoint): boolean {
   if (!Number.isFinite(point.timestamp) || point.timestamp <= 0 ||
@@ -38,7 +43,7 @@ export function acceptPoint(points: WalkPoint[], point: WalkPoint): boolean {
   if (last.segment !== point.segment) return true;
   const meters = getDistance(last, point, 0.1);
   const seconds = (point.timestamp - last.timestamp) / 1000;
-  return meters >= Math.max(5, Math.min(last.accuracy, point.accuracy) / 2) && meters / seconds <= 4;
+  return meters >= Math.max(5, Math.min(last.accuracy, point.accuracy) / 2) && meters / seconds <= MAX_SPEED;
 }
 
 export function appendPoint(walk: Walk, point: WalkPoint): Walk {
@@ -112,11 +117,11 @@ export function walkElevationGain(points: WalkPoint[]) {
   return Math.round(gain);
 }
 
-/** Ritmo do último minuto de registro; devolve traço quando o sinal está perdido. */
-export function walkLivePace(points: WalkPoint[]) {
+/** Janela dos últimos 60 segundos de pontos válidos do mesmo trecho. */
+function recentWindow(points: WalkPoint[]) {
   const last = points.at(-1);
-  if (!last || points.length < 2) return "—";
-  if (Date.now() - last.timestamp > SIGNAL_GAP) return "—";
+  if (!last || points.length < 2) return null;
+  if (Date.now() - last.timestamp > SIGNAL_GAP) return null;
   let meters = 0;
   let seconds = 0;
   for (let index = points.length - 1; index > 0; index -= 1) {
@@ -130,7 +135,24 @@ export function walkLivePace(points: WalkPoint[]) {
     meters += length;
     seconds += delta;
   }
-  return walkPace(meters, seconds);
+  if (!(meters > 0) || !(seconds > 0)) return null;
+  return { meters, seconds };
+}
+
+/** Ritmo do último minuto de registro; devolve traço quando o sinal está perdido. */
+export function walkLivePace(points: WalkPoint[]) {
+  const recent = recentWindow(points);
+  if (!recent) return "—";
+  return walkPace(recent.meters, recent.seconds);
+}
+
+/** Velocidade do último minuto em km/h; traço quando o sinal está perdido. */
+export function walkLiveSpeed(points: WalkPoint[]) {
+  const recent = recentWindow(points);
+  if (!recent) return "—";
+  return (recent.meters / recent.seconds * 3.6).toLocaleString("pt-BR", {
+    minimumFractionDigits: 1, maximumFractionDigits: 1,
+  });
 }
 
 const XML_ESCAPE: Record<string, string> = { "<": "&lt;", ">": "&gt;", "&": "&amp;", '"': "&quot;", "'": "&apos;" };
