@@ -107,7 +107,9 @@ function WalkingPage() {
             <p>Ligue a localização e permita o acesso ao iniciar. O GPS registra o percurso com marcas a cada quilômetro, parciais, ritmo e elevação, tudo sem internet. O círculo indica a precisão do último ponto.</p>
             <p>O tempo ativo pausa sozinho quando o GPS passa 45 segundos sem entregar posição e volta a contar quando o sinal retorna; trechos separados por pausa ou perda de sinal não somam distância entre si. Use Pausar quando descansar.</p>
             <p>A gravação continua quando você troca de aplicativo ou bloqueia a tela, se o navegador mantiver o GPS rodando em segundo plano. Se o sistema interromper o GPS, o cronômetro não conta e o percurso retoma de onde parou ao abrir de novo.</p>
-            <p>Antes de sair, entre na sua conta e carregue esta página na versão publicada com internet. As caminhadas ficam neste navegador, separadas por conta; limpar os dados do site apaga o histórico local. Cada caminhada concluída pode ser exportada em GPX.</p>
+            <p>Antes de sair, entre na sua conta na versão publicada e deixe o aplicativo aberto com internet para preparar as páginas offline. Mantenha a conta conectada para acessar os dados locais sem internet.</p>
+            <p>O percurso, os quilômetros e o tempo ativo são salvos continuamente neste aparelho, separados por conta. Ao reabrir uma caminhada interrompida, use Retomar caminhada. O tempo com o aplicativo fechado não é adicionado automaticamente.</p>
+            <p>O indicador Online mostra apenas a conexão, não confirma um backup na nuvem. Limpar os dados do site apaga o histórico local. Cada caminhada concluída pode ser exportada em GPX.</p>
           </div>
         </section>
         <WalkingHistory />

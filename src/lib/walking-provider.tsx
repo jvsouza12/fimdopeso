@@ -29,6 +29,8 @@ export function WalkingProvider({ children }: { children: ReactNode }) {
   const watch = useRef<number | null>(null);
   const token = useRef(0);
   const since = useRef<number | null>(null);
+  // Um GPS válido também pode informar a mesma posição enquanto a pessoa está parada.
+  const lastSignal = useRef<number | null>(null);
   const segment = useRef(0);
   const loaded = useRef(false);
   const writes = useRef<Promise<void>>(Promise.resolve());
@@ -70,27 +72,29 @@ export function WalkingProvider({ children }: { children: ReactNode }) {
     releaseWake();
   }
 
-  /** Grava o tempo pendente sem encerrar a gravação (troca de aba, segundo plano). */
+  /** Salva apenas o intervalo coberto pelo GPS, inclusive com timers suspensos. */
   function flush() {
     if (since.current === null) return;
     const now = Date.now();
-    const seconds = Math.max(0, (now - since.current) / 1000);
+    const signalEnd = lastSignal.current === null ? since.current : lastSignal.current + SIGNAL_GAP;
+    const seconds = Math.max(0, (Math.min(now, signalEnd) - since.current) / 1000);
     since.current = now;
-    commit(list.current.map(w => w.endedAt ? w : { ...w, durationSeconds: w.durationSeconds + seconds }));
+    if (seconds > 0) {
+      commit(list.current.map(w => w.endedAt ? w : {
+        ...w, durationSeconds: w.durationSeconds + seconds, synced: false,
+      }));
+    }
   }
 
   function pause() {
+    flush();
     stopWatch();
     segment.current += 1;
-    const startTime = since.current;
     since.current = null;
+    lastSignal.current = null;
     setRunning(false);
     setAutoPaused(false);
     setGps("Pausado");
-    if (startTime !== null) {
-      const seconds = Math.max(0, (Date.now() - startTime) / 1000);
-      commit(list.current.map(w => w.endedAt ? w : { ...w, durationSeconds: w.durationSeconds + seconds }));
-    }
     setElapsed(list.current.find(w => !w.endedAt)?.durationSeconds ?? 0);
   }
 
@@ -142,18 +146,10 @@ export function WalkingProvider({ children }: { children: ReactNode }) {
     window.addEventListener("online", connection);
     window.addEventListener("offline", connection);
     const tick = setInterval(() => {
-      const now = Date.now();
-      const current = list.current.find(w => !w.endedAt);
-      const lastFix = current?.points.at(-1)?.timestamp ?? null;
-      const fresh = lastFix !== null && now - lastFix < SIGNAL_GAP;
+      const fresh = lastSignal.current !== null && Date.now() - lastSignal.current < SIGNAL_GAP;
       setAutoPaused(since.current !== null && !fresh);
-      if (since.current !== null) {
-        const seconds = Math.max(0, (now - since.current) / 1000);
-        since.current = now;
-        if (fresh) commit(list.current.map(w => w.endedAt ? w : { ...w, durationSeconds: w.durationSeconds + seconds }));
-      }
-      const active = list.current.find(w => !w.endedAt);
-      setElapsed((active?.durationSeconds ?? 0) + (since.current === null ? 0 : (Date.now() - since.current) / 1000));
+      flush();
+      setElapsed(list.current.find(w => !w.endedAt)?.durationSeconds ?? 0);
     }, 1000);
     const visibility = () => {
       if (document.hidden) { flush(); return; }
@@ -195,7 +191,12 @@ export function WalkingProvider({ children }: { children: ReactNode }) {
         return;
       }
       const previous = list.current.find(w => !w.endedAt)?.points.at(-1);
+      if (lastSignal.current !== null && point.timestamp <= lastSignal.current) return;
       if (previous && previous.segment === point.segment && point.timestamp <= previous.timestamp) return;
+      // Fecha o intervalo anterior antes de atualizar o sinal: o retorno do GPS
+      // nunca deve transformar um período sem localização em tempo ativo.
+      flush();
+      lastSignal.current = point.timestamp;
       if (previous && point.timestamp - previous.timestamp > SIGNAL_GAP) {
         segment.current += 1;
         point.segment = segment.current;

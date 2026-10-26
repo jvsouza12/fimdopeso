@@ -14,7 +14,7 @@ export default defineConfig({
       injectRegister: null, registerType: "autoUpdate", manifest: false,
       devOptions: { enabled: false },
       workbox: {
-        globDirectory: "dist/client", globPatterns: ["**/*.{js,css,png,webmanifest}"],
+        globDirectory: "dist/client", globPatterns: ["**/*.{js,css,png,jpg,jpeg,svg,webp,avif,ico,woff,woff2,webmanifest}"],
         maximumFileSizeToCacheInBytes: 5000000,
         navigateFallback: null, skipWaiting: true, clientsClaim: true,
         importScripts: ["/notification-events.js"],
