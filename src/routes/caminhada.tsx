@@ -98,6 +98,11 @@ function WalkingPage() {
             {active && <Button className="h-12" variant="outline" onClick={() => { void finish().then(() => toast.success("Caminhada salva")).catch(() => toast.error("Não foi possível salvar. Tente novamente.")); }}><Square />Finalizar</Button>}
           </div>
 
+          {ready && <div className="space-y-1 rounded-lg border border-border bg-surface p-4 text-sm text-foreground">
+            <p className="font-medium">Histórico local · sem backup na nuvem</p>
+            <p className="text-xs leading-relaxed text-muted-foreground">Ao salvar, as caminhadas concluídas e as exclusões ficam numa fila neste aparelho, separada por conta. O envio automático depende da conexão de um banco ao projeto; estar online ainda não envia os registros.</p>
+          </div>}
+
           {!ready && !error && <p role="status" className="text-sm text-muted-foreground">Carregando caminhadas deste aparelho…</p>}
           {error && <div role="alert" className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-border p-3 text-sm text-warning"><p className="min-w-0 flex-1">{error}</p><Button size="sm" variant="ghost" onClick={retry} disabled={syncing} aria-label={ready ? "Tentar salvar no aparelho" : "Tentar carregar caminhadas"}><RefreshCw />Tentar novamente</Button></div>}
 
