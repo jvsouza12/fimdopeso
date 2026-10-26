@@ -1,19 +1,62 @@
 import { createContext, useContext, useEffect, useRef, useState, type ReactNode } from "react";
+import { useServerFn } from "@tanstack/react-start";
 import { useSession } from "@/hooks/useSession";
 import { acceptPoint, appendPoint, SIGNAL_GAP, type Walk, type WalkPoint } from "./walking";
-import { readWalks, writeWalks } from "./walking-storage";
+import { dropFromOutbox, readWalkOutbox, readWalks, writeWalks } from "./walking-storage";
+import { listWalks, removeWalk, uploadWalk, type WalkPointPayload, type WalkRow } from "./walks.functions";
+
+type CloudStatus = "idle" | "sending" | "done" | "error";
 
 interface WalkingContext {
   walks: Walk[]; active: Walk | undefined; running: boolean; autoPaused: boolean; elapsed: number;
   ready: boolean; online: boolean; gps: string; error: string; syncing: boolean; locating: boolean;
   saveStatus: "idle" | "saving" | "saved" | "error"; savedAt: number | null;
-  start: () => void; pause: () => void; finish: () => Promise<void>; retry: () => void; remove: (id: string) => Promise<void>;
+  cloudStatus: CloudStatus; cloudPending: number; cloudMessage: string;
+  start: () => void; pause: () => void; finish: () => Promise<void>; retry: () => void;
+  remove: (id: string) => Promise<void>; syncCloud: () => void;
 }
 const Context = createContext<WalkingContext | null>(null);
+
+/** Reconstrói o percurso recebido da conta ignorando pontos inválidos. */
+function restorePoints(points: WalkPointPayload[] | null | undefined): WalkPoint[] {
+  if (!Array.isArray(points)) return [];
+  const restored: WalkPoint[] = [];
+  for (const point of points) {
+    if (!point) continue;
+    if (!Number.isFinite(point.latitude) || !Number.isFinite(point.longitude) || !Number.isFinite(point.timestamp)) continue;
+    restored.push({
+      latitude: point.latitude,
+      longitude: point.longitude,
+      accuracy: Number.isFinite(point.accuracy) ? point.accuracy : 50,
+      timestamp: point.timestamp,
+      segment: Number.isFinite(point.segment) ? point.segment : 0,
+      altitude: typeof point.altitude === "number" && Number.isFinite(point.altitude) ? point.altitude : null,
+    });
+  }
+  return restored;
+}
+
+function toWalk(row: WalkRow, userId: string): Walk {
+  const duration = Number(row.duration_seconds);
+  const distance = Number(row.distance_meters);
+  return {
+    id: row.id,
+    userId,
+    startedAt: row.started_at,
+    endedAt: row.ended_at ?? row.started_at,
+    durationSeconds: Number.isFinite(duration) ? duration : 0,
+    distanceMeters: Number.isFinite(distance) ? distance : 0,
+    points: restorePoints(row.points),
+    synced: true,
+  };
+}
 
 export function WalkingProvider({ children }: { children: ReactNode }) {
   const { session } = useSession();
   const userId = session?.user.id ?? null;
+  const uploadWalkFn = useServerFn(uploadWalk);
+  const removeWalkFn = useServerFn(removeWalk);
+  const listWalksFn = useServerFn(listWalks);
   const [walks, setWalks] = useState<Walk[]>([]);
   const [owner, setOwner] = useState<string | null>(null);
   const [running, setRunning] = useState(false);
@@ -26,6 +69,10 @@ export function WalkingProvider({ children }: { children: ReactNode }) {
   const [syncing, setSyncing] = useState(false);
   const [saveStatus, setSaveStatus] = useState<WalkingContext["saveStatus"]>("idle");
   const [savedAt, setSavedAt] = useState<number | null>(null);
+  const [cloudStatus, setCloudStatus] = useState<CloudStatus>("idle");
+  const [cloudPending, setCloudPending] = useState(0);
+  const [cloudMessage, setCloudMessage] = useState("");
+  const cloudBusy = useRef(false);
   const saveRevision = useRef(0);
   const [loadAttempt, setLoadAttempt] = useState(0);
   const list = useRef<Walk[]>([]);
@@ -125,12 +172,106 @@ export function WalkingProvider({ children }: { children: ReactNode }) {
     }
   }
 
+  /**
+   * Envia a fila local para a conta e traz de volta o que já está na nuvem.
+   * Sem internet, nada é perdido: a fila continua salva no aparelho.
+   */
+  async function syncCloudNow() {
+    const account = uid.current;
+    if (!account || !loaded.current || cloudBusy.current) return;
+    if (!navigator.onLine) {
+      if (uid.current === account) {
+        setCloudStatus("idle");
+        setCloudMessage("Sem internet. As caminhadas ficam na fila deste aparelho e são enviadas quando a conexão voltar.");
+      }
+      return;
+    }
+    cloudBusy.current = true;
+    setCloudStatus("sending");
+    try {
+      await writes.current.catch(() => {});
+      const queue = await readWalkOutbox(account);
+      let remaining = queue.length;
+      setCloudPending(remaining);
+      let failures = 0;
+      const sent: string[] = [];
+
+      for (const entry of queue) {
+        if (uid.current !== account) return;
+        try {
+          if (entry.operation === "save") {
+            await uploadWalkFn({ data: {
+              id: entry.walk.id,
+              startedAt: entry.walk.startedAt,
+              endedAt: entry.walk.endedAt ?? new Date().toISOString(),
+              durationSeconds: Math.round(entry.walk.durationSeconds),
+              distanceMeters: entry.walk.distanceMeters,
+              points: entry.walk.points,
+            } });
+            sent.push(entry.walkId);
+          } else {
+            await removeWalkFn({ data: { walkId: entry.walkId } });
+          }
+          await dropFromOutbox(account, entry.walkId);
+          remaining = Math.max(0, remaining - 1);
+          setCloudPending(remaining);
+        } catch {
+          failures += 1;
+        }
+      }
+
+      if (uid.current !== account) return;
+      if (sent.length) {
+        commit(list.current.map(walk => sent.includes(walk.id) ? { ...walk, synced: true } : walk));
+        await writes.current.catch(() => {});
+      }
+
+      // Junta as caminhadas que já estão na conta, sem duplicar e sem
+      // ressuscitar o que foi apagado neste aparelho e ainda está pendente.
+      try {
+        const remote = await listWalksFn();
+        if (uid.current !== account) return;
+        const pending = await readWalkOutbox(account);
+        const blocked = new Set(pending.filter(item => item.operation === "delete").map(item => item.walkId));
+        const known = new Set(list.current.map(walk => walk.id));
+        const incoming = remote.walks
+          .filter(row => Boolean(row.ended_at) && !known.has(row.id) && !blocked.has(row.id))
+          .map(row => toWalk(row, account));
+        if (incoming.length) {
+          commit([...list.current, ...incoming].sort((a, b) => b.startedAt.localeCompare(a.startedAt)));
+          await writes.current.catch(() => {});
+        }
+      } catch {
+        failures += 1;
+      }
+
+      if (uid.current !== account) return;
+      if (failures) {
+        setCloudStatus("error");
+        setCloudMessage("Não foi possível enviar tudo agora. A fila continua salva neste aparelho e será reenviada na próxima conexão.");
+      } else {
+        setCloudStatus("done");
+        setCloudMessage(queue.length ? "Caminhadas enviadas para a sua conta." : "Tudo salvo na sua conta.");
+      }
+    } catch {
+      if (uid.current === account) {
+        setCloudStatus("error");
+        setCloudMessage("Não foi possível enviar agora. A fila continua salva neste aparelho.");
+      }
+    } finally {
+      cloudBusy.current = false;
+    }
+  }
+
   useEffect(() => {
     let cancelled = false;
     pause();
     saveRevision.current += 1;
     setSaveStatus("idle");
     setSavedAt(null);
+    setCloudStatus("idle");
+    setCloudPending(0);
+    setCloudMessage("");
     uid.current = userId;
     loaded.current = false;
     list.current = [];
@@ -151,6 +292,7 @@ export function WalkingProvider({ children }: { children: ReactNode }) {
       setGps(saved.some(w => !w.endedAt) ? "Pausado · caminhada recuperada" : "GPS desligado");
       // Inclui também os registros anteriores na fila local, sem marcar envio à nuvem.
       void sync();
+      void syncCloudNow();
     }).catch(() => {
       if (!cancelled && uid.current === userId) setError("Armazenamento indisponível. Permita o armazenamento neste navegador.");
     });
@@ -160,8 +302,11 @@ export function WalkingProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     const connection = () => {
       setOnline(navigator.onLine);
-      // Retenta a persistência local; conexão não equivale a backup remoto.
-      if (navigator.onLine) void sync();
+      // Retenta a persistência local e, com internet, envia a fila para a conta.
+      if (navigator.onLine) {
+        void sync();
+        void syncCloudNow();
+      }
     };
     connection();
     window.addEventListener("online", connection);
@@ -263,6 +408,7 @@ export function WalkingProvider({ children }: { children: ReactNode }) {
     setError("");
     commit(list.current.map(w => w.endedAt ? w : { ...w, endedAt: new Date().toISOString(), durationSeconds: Math.round(w.durationSeconds) }));
     await writes.current;
+    void syncCloudNow();
   }
 
   async function remove(id: string) {
@@ -270,13 +416,14 @@ export function WalkingProvider({ children }: { children: ReactNode }) {
     commit(list.current.filter(w => w.id !== id));
     await writes.current;
     setElapsed(list.current.find(w => !w.endedAt)?.durationSeconds ?? 0);
+    void syncCloudNow();
   }
 
   const visible = owner === userId && userId ? walks : [];
   return <Context.Provider value={{ walks: visible, active: visible.find(w => !w.endedAt), running, autoPaused,
     elapsed, ready: Boolean(userId && owner === userId), online, gps, error, syncing, locating,
-    saveStatus, savedAt,
-    start, pause, finish, remove, retry: () => {
+    saveStatus, savedAt, cloudStatus, cloudPending, cloudMessage,
+    start, pause, finish, remove, syncCloud: () => { void syncCloudNow(); }, retry: () => {
       if (!userId || uid.current !== userId) return;
       if (!loaded.current) {
         setError("");
@@ -284,6 +431,7 @@ export function WalkingProvider({ children }: { children: ReactNode }) {
         return;
       }
       void sync();
+      void syncCloudNow();
     } }}>{children}</Context.Provider>;
 }
 

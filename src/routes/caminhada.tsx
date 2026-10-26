@@ -24,7 +24,7 @@ export const Route = createFileRoute("/caminhada")({
 
 function WalkingPage() {
   const { session, loading } = useSession();
-  const { active, running, autoPaused, locating, elapsed, ready, online, gps, error, syncing, saveStatus, savedAt, start, pause, finish, retry } = useWalking();
+  const { active, running, autoPaused, locating, elapsed, ready, online, gps, error, syncing, saveStatus, savedAt, cloudStatus, cloudPending, cloudMessage, start, pause, finish, retry, syncCloud } = useWalking();
   const [finishing, setFinishing] = useState(false);
   const finishLock = useRef(false);
   async function finishWalk() {
@@ -123,9 +123,16 @@ function WalkingPage() {
 
           <OfflinePreparation online={online} />
 
-          {ready && <div className="space-y-1 rounded-lg border border-border bg-surface p-4 text-sm text-foreground">
-            <p className="font-medium">Histórico local · sem backup na nuvem</p>
-            <p className="text-xs leading-relaxed text-muted-foreground">Ao salvar, as caminhadas concluídas e as exclusões ficam numa fila neste aparelho, separada por conta. O envio automático depende da conexão de um banco ao projeto; estar online ainda não envia os registros.</p>
+          {ready && <div role="status" className="space-y-2 rounded-lg border border-border bg-surface p-4 text-sm text-foreground">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <p className="font-medium">Backup na sua conta</p>
+              <span className="text-xs text-muted-foreground">{cloudPending > 0 ? `${cloudPending} ${cloudPending === 1 ? "caminhada na fila" : "caminhadas na fila"}` : "Fila vazia"}</span>
+            </div>
+            <p className="text-xs leading-relaxed text-muted-foreground">{cloudMessage || "As caminhadas concluídas ficam numa fila neste aparelho, separada por conta, e são enviadas para a sua conta assim que houver internet."}</p>
+            <div className="flex flex-wrap items-center gap-3">
+              <Button size="sm" variant="outline" disabled={cloudStatus === "sending" || !online} onClick={() => syncCloud()}>{cloudStatus === "sending" ? <Loader2 className="animate-spin" /> : <RefreshCw />}{cloudStatus === "sending" ? "Enviando…" : "Enviar agora"}</Button>
+              <span className="text-xs text-muted-foreground">{cloudStatus === "sending" ? "Enviando para a conta…" : cloudStatus === "error" ? "Envio pendente · a fila continua no aparelho" : cloudStatus === "done" ? "Em dia com a conta" : online ? "Aguardando envio" : "Sem internet"}</span>
+            </div>
           </div>}
 
           {!ready && !error && <p role="status" className="text-sm text-muted-foreground">Carregando caminhadas deste aparelho…</p>}
@@ -139,8 +146,8 @@ function WalkingPage() {
             <p>A gravação continua quando você troca de aplicativo ou bloqueia a tela, se o navegador mantiver o GPS rodando em segundo plano. Se o sistema interromper o GPS, o cronômetro não conta e o percurso retoma de onde parou ao abrir de novo.</p>
             <p>Antes de sair, entre na sua conta na versão publicada e deixe o aplicativo aberto com internet para preparar as páginas offline. Mantenha a conta conectada para acessar os dados locais sem internet.</p>
             <p>O percurso, os quilômetros e o tempo ativo são salvos continuamente neste aparelho, separados por conta. Ao reabrir uma caminhada interrompida, use Retomar caminhada. O tempo com o aplicativo fechado não é adicionado automaticamente.</p>
-            <p>As caminhadas concluídas ficam em uma fila local, com percurso, quilômetros e tempo, separada por conta. As exclusões também ficam registradas para uma futura sincronização. Ao voltar à internet, o aplicativo tenta salvar novamente no aparelho.</p>
-            <p>O envio à nuvem ainda não está disponível: depende de conectar o banco do projeto e concluir a integração. O indicador Online mostra apenas a conexão, não confirma um backup. Limpar os dados do site apaga o histórico e a fila local. Cada caminhada concluída pode ser exportada em GPX.</p>
+            <p>As caminhadas concluídas ficam em uma fila local, com percurso, quilômetros e tempo, separada por conta. As exclusões também ficam registradas. Ao voltar à internet, a fila é enviada para a sua conta e as pendências já resolvidas saem do aparelho.</p>
+            <p>Com internet e a conta conectada, o aplicativo envia a fila de caminhadas concluídas e as exclusões, e traz de volta os percursos que já estavam na sua conta em outros aparelhos. O indicador Online mostra apenas a conexão; a confirmação do backup aparece no painel Backup na sua conta. Limpar os dados do site apaga o histórico e a fila local, mas o que já foi enviado continua na conta. Cada caminhada concluída pode ser exportada em GPX.</p>
           </div>
         </section>
         <WalkingHistory />

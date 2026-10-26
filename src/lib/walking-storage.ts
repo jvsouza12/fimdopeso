@@ -34,6 +34,21 @@ export async function readWalkOutbox(userId: string): Promise<WalkOutboxEntry[]>
   }
 }
 
+/** Retira uma pendência já resolvida, sem tocar no histórico da conta. */
+export async function dropFromOutbox(userId: string, walkId: string) {
+  const db = await database();
+  try {
+    const transaction = db.transaction("outbox", "readwrite");
+    const outbox = transaction.objectStore("outbox");
+    const pending: WalkOutboxEntry[] = (await outbox.get(userId)) ?? [];
+    const next = pending.filter(entry => entry.walkId !== walkId);
+    if (next.length !== pending.length) await outbox.put(next, userId);
+    await transaction.done;
+  } finally {
+    db.close();
+  }
+}
+
 /** Histórico e pendências são gravados juntos: ambos persistem ou nenhum muda. */
 export async function writeWalks(userId: string, walks: Walk[]) {
   if (!userId || walks.some(walk => walk.userId !== userId)) {
