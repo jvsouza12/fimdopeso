@@ -1,5 +1,6 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { OfflinePreparation } from "@/components/app/OfflinePreparation";
 import { Footprints, Play, Pause, Square, LocateFixed, Wifi, WifiOff, RefreshCw, Loader2, Flag, Signal, Activity, TimerReset } from "lucide-react";
 import { PageHeader } from "@/components/app/AppShell";
 import { Button } from "@/components/ui/button";
@@ -23,7 +24,23 @@ export const Route = createFileRoute("/caminhada")({
 
 function WalkingPage() {
   const { session, loading } = useSession();
-  const { active, running, autoPaused, locating, elapsed, ready, online, gps, error, syncing, start, pause, finish, retry } = useWalking();
+  const { active, running, autoPaused, locating, elapsed, ready, online, gps, error, syncing, saveStatus, savedAt, start, pause, finish, retry } = useWalking();
+  const [finishing, setFinishing] = useState(false);
+  const finishLock = useRef(false);
+  async function finishWalk() {
+    if (finishLock.current) return;
+    finishLock.current = true;
+    setFinishing(true);
+    try {
+      await finish();
+      toast.success("Caminhada salva neste aparelho");
+    } catch {
+      toast.error("A gravação não foi confirmada. Não feche o app e use Tentar novamente.");
+    } finally {
+      finishLock.current = false;
+      setFinishing(false);
+    }
+  }
   const activeId = active?.id ?? null;
   const [now, setNow] = useState(() => Date.now());
   useEffect(() => {
@@ -94,9 +111,17 @@ function WalkingPage() {
           <WalkingMap points={active?.points ?? []} online={online} live={running && !autoPaused} />
 
           <div className="flex gap-3">
-            <Button className="h-12 flex-1" disabled={!ready} onClick={running || locating ? pause : start}>{locating ? <Loader2 className="animate-spin" /> : running ? <Pause /> : <Play />}{locating ? "Cancelar busca do GPS" : running ? "Pausar" : active ? "Retomar caminhada" : "Iniciar caminhada"}</Button>
-            {active && <Button className="h-12" variant="outline" onClick={() => { void finish().then(() => toast.success("Caminhada salva")).catch(() => toast.error("Não foi possível salvar. Tente novamente.")); }}><Square />Finalizar</Button>}
+            <Button className="h-12 flex-1" disabled={!ready || finishing} onClick={running || locating ? pause : start}>{locating ? <Loader2 className="animate-spin" /> : running ? <Pause /> : <Play />}{finishing ? "Salvando caminhada…" : locating ? "Cancelar busca do GPS" : running ? "Pausar" : active ? "Retomar caminhada" : "Iniciar caminhada"}</Button>
+            {(active || finishing) && <Button className="h-12" variant="outline" disabled={finishing} onClick={() => { void finishWalk(); }}>{finishing ? <Loader2 className="animate-spin" /> : <Square />}{finishing ? "Salvando…" : "Finalizar"}</Button>}
           </div>
+
+          {ready && <div role="status" className="rounded-lg border border-border bg-surface p-3 text-sm text-foreground">
+            <p className="font-medium">{saveStatus === "saving" ? "Gravando no aparelho…" : saveStatus === "saved" ? "Gravação local confirmada" : saveStatus === "error" ? "Gravação local não confirmada" : "Aguardando gravação local"}</p>
+            {savedAt !== null && <p className="mt-1 text-xs text-muted-foreground">Última confirmação: {new Date(savedAt).toLocaleTimeString("pt-BR")}. Esta confirmação não representa envio à nuvem.</p>}
+            {saveStatus === "error" && <p className="mt-1 text-xs text-warning">Não feche o aplicativo. Libere espaço e use Tentar novamente abaixo.</p>}
+          </div>}
+
+          <OfflinePreparation online={online} />
 
           {ready && <div className="space-y-1 rounded-lg border border-border bg-surface p-4 text-sm text-foreground">
             <p className="font-medium">Histórico local · sem backup na nuvem</p>

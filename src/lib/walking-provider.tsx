@@ -6,6 +6,7 @@ import { readWalks, writeWalks } from "./walking-storage";
 interface WalkingContext {
   walks: Walk[]; active: Walk | undefined; running: boolean; autoPaused: boolean; elapsed: number;
   ready: boolean; online: boolean; gps: string; error: string; syncing: boolean; locating: boolean;
+  saveStatus: "idle" | "saving" | "saved" | "error"; savedAt: number | null;
   start: () => void; pause: () => void; finish: () => Promise<void>; retry: () => void; remove: (id: string) => Promise<void>;
 }
 const Context = createContext<WalkingContext | null>(null);
@@ -23,6 +24,9 @@ export function WalkingProvider({ children }: { children: ReactNode }) {
   const [gps, setGps] = useState("GPS desligado");
   const [error, setError] = useState("");
   const [syncing, setSyncing] = useState(false);
+  const [saveStatus, setSaveStatus] = useState<WalkingContext["saveStatus"]>("idle");
+  const [savedAt, setSavedAt] = useState<number | null>(null);
+  const saveRevision = useRef(0);
   const [loadAttempt, setLoadAttempt] = useState(0);
   const list = useRef<Walk[]>([]);
   const uid = useRef<string | null>(null);
@@ -39,11 +43,19 @@ export function WalkingProvider({ children }: { children: ReactNode }) {
   function commit(next: Walk[]) {
     const account = uid.current;
     if (!account) return;
+    const revision = ++saveRevision.current;
     list.current = next;
     setWalks(next);
+    setSaveStatus("saving");
     writes.current = writes.current.catch(() => {}).then(() => writeWalks(account, next));
-    void writes.current.catch(() => {
-      if (uid.current === account) setError("Não foi possível salvar no aparelho. Libere espaço antes de continuar.");
+    void writes.current.then(() => {
+      if (uid.current !== account || saveRevision.current !== revision) return;
+      setSavedAt(Date.now());
+      setSaveStatus("saved");
+    }, () => {
+      if (uid.current !== account || saveRevision.current !== revision) return;
+      setSaveStatus("error");
+      setError("Não foi possível salvar no aparelho. Libere espaço antes de continuar.");
     });
   }
 
@@ -116,6 +128,9 @@ export function WalkingProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     let cancelled = false;
     pause();
+    saveRevision.current += 1;
+    setSaveStatus("idle");
+    setSavedAt(null);
     uid.current = userId;
     loaded.current = false;
     list.current = [];
@@ -260,6 +275,7 @@ export function WalkingProvider({ children }: { children: ReactNode }) {
   const visible = owner === userId && userId ? walks : [];
   return <Context.Provider value={{ walks: visible, active: visible.find(w => !w.endedAt), running, autoPaused,
     elapsed, ready: Boolean(userId && owner === userId), online, gps, error, syncing, locating,
+    saveStatus, savedAt,
     start, pause, finish, remove, retry: () => {
       if (!userId || uid.current !== userId) return;
       if (!loaded.current) {
