@@ -1,15 +1,28 @@
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { z } from "zod";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { lovable } from "@/integrations/lovable";
 import { useSession } from "@/hooks/useSession";
 import { useStore } from "@/lib/store";
+import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { ArrowRight, Check, Eye, EyeOff, Loader2, LockKeyhole, Mail, UtensilsCrossed } from "lucide-react";
+import {
+  ArrowRight,
+  Check,
+  Eye,
+  EyeOff,
+  Loader2,
+  LockKeyhole,
+  Mail,
+  ShieldCheck,
+  TrendingUp,
+  UtensilsCrossed,
+  WifiOff,
+} from "lucide-react";
 import authImage from "@/assets/nutriplan-auth.jpg";
 
 export const Route = createFileRoute("/auth")({
@@ -75,6 +88,25 @@ function friendlyError(raw: string): { text: string; description?: string; needs
   return { text: raw };
 }
 
+const STRENGTH_STYLES = [
+  { label: "Muito fraca", bar: "bg-destructive", text: "text-destructive" },
+  { label: "Fraca", bar: "bg-destructive", text: "text-destructive" },
+  { label: "Razoável", bar: "bg-warning", text: "text-warning" },
+  { label: "Boa", bar: "bg-primary", text: "text-primary" },
+  { label: "Forte", bar: "bg-success", text: "text-success" },
+];
+
+/** Medidor simples de força da senha, usado só como orientação visual. */
+function measurePassword(password: string) {
+  if (!password) return { score: 0, ...STRENGTH_STYLES[0] };
+  let score = 0;
+  if (password.length >= 8) score += 1;
+  if (/[A-Za-zÀ-ÿ]/.test(password)) score += 1;
+  if (/[0-9]/.test(password)) score += 1;
+  if (/[^A-Za-z0-9]/.test(password) || password.length >= 12) score += 1;
+  return { score, ...STRENGTH_STYLES[score] };
+}
+
 function AuthPage() {
   const [mode, setMode] = useState<"login" | "signup">("login");
   const [email, setEmail] = useState("");
@@ -90,6 +122,7 @@ function AuthPage() {
   const { session } = useSession();
   const { hydrated } = useStore();
   const navigate = useNavigate();
+  const strength = useMemo(() => measurePassword(password), [password]);
 
   // Quem já está logado não fica preso na tela de entrada.
   useEffect(() => {
@@ -246,8 +279,9 @@ function AuthPage() {
   };
 
   return (
-    <main className="min-h-screen bg-background lg:grid lg:grid-cols-[minmax(0,1.08fr)_minmax(440px,0.92fr)]">
-      <section className="relative hidden min-h-screen overflow-hidden lg:block" aria-label="Alimentação saudável">
+    <main className="min-h-screen bg-background text-foreground lg:grid lg:grid-cols-[minmax(0,1.05fr)_minmax(0,1fr)]">
+      {/* Painel de apresentação */}
+      <section className="relative hidden overflow-hidden lg:flex lg:flex-col lg:justify-between lg:px-14 lg:py-14">
         <img
           src={authImage}
           alt="Refeição equilibrada com frango, arroz, feijão, abacate e vegetais"
@@ -255,31 +289,79 @@ function AuthPage() {
           height={1600}
           className="absolute inset-0 size-full object-cover object-center"
         />
-        <div className="absolute inset-0 bg-background/30" />
-        <div className="absolute inset-x-0 bottom-0 bg-background/80 px-10 py-10 backdrop-blur-md">
-          <p className="max-w-xl text-3xl font-bold leading-tight">Seu plano, seus registros e sua evolução em um só lugar.</p>
-          <div className="mt-5 flex flex-wrap gap-x-6 gap-y-3 text-sm text-muted-foreground">
-            {["Metas personalizadas", "Sincronização automática", "Evolução clara"].map((item) => (
-              <span key={item} className="flex items-center gap-2">
-                <Check className="size-4 text-success" /> {item}
-              </span>
+        <div className="absolute inset-0 bg-gradient-to-t from-background via-background/85 to-background/40" />
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_15%,var(--primary),transparent_55%)] opacity-15" />
+
+        <div className="relative z-10 flex items-center gap-2.5">
+          <span className="gradient-primary flex size-10 items-center justify-center rounded-xl text-primary-foreground shadow-lg">
+            <UtensilsCrossed className="size-5" />
+          </span>
+          <span className="text-lg font-bold tracking-tight">CasalPlan</span>
+        </div>
+
+        <div className="relative z-10 max-w-lg">
+          <p className="inline-flex items-center gap-2 rounded-full border border-border/70 bg-surface/60 px-3 py-1 text-xs font-medium text-muted-foreground backdrop-blur">
+            <ShieldCheck className="size-3.5 text-success" /> Conta protegida e dados sincronizados
+          </p>
+          <h2 className="mt-6 text-4xl font-bold leading-[1.1] tracking-tight">
+            Sua dieta, sua evolução e seus registros em um só lugar.
+          </h2>
+          <p className="mt-4 text-base leading-7 text-muted-foreground">
+            Entre para continuar de onde parou e manter tudo sincronizado entre celular e computador.
+          </p>
+
+          <ul className="mt-8 space-y-4">
+            {[
+              {
+                icon: TrendingUp,
+                title: "Evolução que faz sentido",
+                text: "Peso, medidas e médias semanais em gráficos fáceis de ler.",
+              },
+              {
+                icon: UtensilsCrossed,
+                title: "Plano sob medida",
+                text: "Calorias, macros e água calculados para o seu corpo.",
+              },
+              {
+                icon: WifiOff,
+                title: "Funciona sem internet",
+                text: "Registre refeições e caminhadas mesmo offline.",
+              },
+            ].map((item) => (
+              <li key={item.title} className="flex items-start gap-3">
+                <span className="mt-0.5 flex size-9 shrink-0 items-center justify-center rounded-xl bg-surface/80 text-primary ring-1 ring-border/60 backdrop-blur">
+                  <item.icon className="size-4" />
+                </span>
+                <div>
+                  <p className="text-sm font-semibold">{item.title}</p>
+                  <p className="text-sm text-muted-foreground">{item.text}</p>
+                </div>
+              </li>
             ))}
-          </div>
+          </ul>
+        </div>
+
+        <div className="relative z-10 flex items-center gap-3 text-xs text-muted-foreground">
+          <ShieldCheck className="size-4 text-success" />
+          Suas informações são privadas. Você pode exportar ou apagar tudo quando quiser.
         </div>
       </section>
 
-      <section className="flex min-h-screen items-center justify-center px-5 py-8 sm:px-10 lg:px-14">
+      {/* Formulário */}
+      <section className="flex min-h-screen items-center justify-center px-5 py-10 sm:px-10 lg:px-12">
         <div className="w-full max-w-md">
-          <Link to="/" className="mb-10 inline-flex items-center gap-2.5" aria-label="CasalPlan — início">
+          <Link to="/" className="mb-8 inline-flex items-center gap-2.5 lg:hidden" aria-label="CasalPlan — início">
             <span className="gradient-primary flex size-10 items-center justify-center rounded-xl text-primary-foreground">
               <UtensilsCrossed className="size-5" />
             </span>
-            <span className="text-lg font-bold">CasalPlan</span>
+            <span className="text-lg font-bold tracking-tight">CasalPlan</span>
           </Link>
 
           <header>
-            <p className="text-sm font-semibold text-primary">{mode === "login" ? "BEM-VINDO DE VOLTA" : "COMECE POR AQUI"}</p>
-            <h1 className="mt-2 text-3xl font-bold sm:text-4xl">
+            <p className="text-xs font-semibold uppercase tracking-[0.14em] text-primary">
+              {mode === "login" ? "Bem-vindo de volta" : "Comece por aqui"}
+            </p>
+            <h1 className="mt-2 text-3xl font-bold tracking-tight sm:text-4xl">
               {mode === "login" ? "Entre na sua conta" : "Crie sua conta grátis"}
             </h1>
             <p className="mt-3 text-sm leading-6 text-muted-foreground">
@@ -289,35 +371,37 @@ function AuthPage() {
             </p>
           </header>
 
-          <div className="mt-7 grid grid-cols-2 rounded-lg bg-surface-2 p-1" aria-label="Escolha entre entrar ou criar conta">
-            <Button
-              type="button"
-              variant={mode === "login" ? "secondary" : "ghost"}
-              className="h-10 shadow-none"
-              onClick={() => {
-                setMode("login");
-                setSent(false);
-                setConfirmation("");
-              }}
-            >
-              Entrar
-            </Button>
-            <Button
-              type="button"
-              variant={mode === "signup" ? "secondary" : "ghost"}
-              className="h-10 shadow-none"
-              onClick={() => {
-                setMode("signup");
-                setSent(false);
-              }}
-            >
-              Criar conta
-            </Button>
+          <div
+            className="mt-7 flex rounded-xl border border-border bg-surface-2 p-1"
+            role="tablist"
+            aria-label="Escolha entre entrar ou criar conta"
+          >
+            {(["login", "signup"] as const).map((value) => (
+              <button
+                key={value}
+                type="button"
+                role="tab"
+                aria-selected={mode === value}
+                onClick={() => {
+                  setMode(value);
+                  setSent(false);
+                  if (value === "login") setConfirmation("");
+                }}
+                className={cn(
+                  "flex-1 cursor-pointer rounded-lg px-3 py-2 text-sm font-semibold transition-all focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring",
+                  mode === value
+                    ? "bg-surface text-foreground shadow-sm"
+                    : "text-muted-foreground hover:text-foreground",
+                )}
+              >
+                {value === "login" ? "Entrar" : "Criar conta"}
+              </button>
+            ))}
           </div>
 
           {sent ? (
-            <div className="mt-6 space-y-5 rounded-lg border border-border bg-surface p-6 text-center">
-              <span className="mx-auto flex size-11 items-center justify-center rounded-full bg-success/15 text-success">
+            <div className="card-surface mt-6 space-y-5 p-6 text-center">
+              <span className="mx-auto flex size-12 items-center justify-center rounded-full bg-success/15 text-success">
                 <Mail className="size-5" />
               </span>
               <div>
@@ -340,13 +424,13 @@ function AuthPage() {
                   O link vale por alguns minutos. Se não encontrar a mensagem, confira a pasta de spam.
                 </p>
               </div>
-              <Button className="w-full" variant="secondary" onClick={resend} disabled={resending || resendIn > 0}>
+              <Button className="h-11 w-full rounded-xl" variant="secondary" onClick={resend} disabled={resending || resendIn > 0}>
                 {resending ? <Loader2 className="animate-spin" /> : <Mail />}
                 {resendIn > 0 ? `Reenviar em ${resendIn}s` : "Reenviar link de confirmação"}
               </Button>
               <Button
                 variant="outline"
-                className="w-full"
+                className="h-11 w-full rounded-xl"
                 onClick={() => {
                   setSent(false);
                   setMode("login");
@@ -356,11 +440,11 @@ function AuthPage() {
               </Button>
             </div>
           ) : (
-            <form onSubmit={submit} className="mt-6 space-y-5" aria-busy={loading}>
+            <form onSubmit={submit} className="mt-6 space-y-5" aria-busy={loading} noValidate>
               <div className="space-y-2">
                 <Label htmlFor="email">E-mail</Label>
                 <div className="relative">
-                  <Mail className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+                  <Mail className="pointer-events-none absolute left-3.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
                   <Input
                     id="email"
                     type="email"
@@ -369,7 +453,7 @@ function AuthPage() {
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     placeholder="seuemail@exemplo.com"
-                    className="h-12 pl-10"
+                    className="h-12 rounded-xl pl-10 text-base md:text-sm"
                     maxLength={255}
                     disabled={loading}
                     required
@@ -381,13 +465,13 @@ function AuthPage() {
                 <div className="flex items-center justify-between gap-4">
                   <Label htmlFor="password">Senha</Label>
                   {mode === "login" && (
-                    <Button type="button" variant="link" className="h-auto p-0 text-xs" onClick={reset}>
+                    <Button type="button" variant="link" className="h-auto p-0 text-xs font-semibold" onClick={reset}>
                       Esqueci minha senha
                     </Button>
                   )}
                 </div>
                 <div className="relative">
-                  <LockKeyhole className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+                  <LockKeyhole className="pointer-events-none absolute left-3.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
                   <Input
                     id="password"
                     type={showPassword ? "text" : "password"}
@@ -395,7 +479,7 @@ function AuthPage() {
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     placeholder={mode === "login" ? "Digite sua senha" : "8 caracteres, com letra e número"}
-                    className="h-12 px-10"
+                    className="h-12 rounded-xl pl-10 pr-11 text-base md:text-sm"
                     maxLength={72}
                     disabled={loading}
                     required
@@ -404,7 +488,7 @@ function AuthPage() {
                     type="button"
                     variant="ghost"
                     size="icon"
-                    className="absolute right-1.5 top-1/2 -translate-y-1/2 text-muted-foreground"
+                    className="absolute right-1.5 top-1/2 size-9 -translate-y-1/2 text-muted-foreground hover:bg-transparent hover:text-foreground"
                     onClick={() => setShowPassword((value) => !value)}
                     aria-label={showPassword ? "Ocultar senha" : "Mostrar senha"}
                     title={showPassword ? "Ocultar senha" : "Mostrar senha"}
@@ -412,14 +496,39 @@ function AuthPage() {
                     {showPassword ? <EyeOff /> : <Eye />}
                   </Button>
                 </div>
-                {mode === "signup" && <p className="text-xs text-muted-foreground">Números podem se repetir; basta incluir uma letra.</p>}
+
+                {mode === "signup" && (
+                  <div className="pt-1">
+                    <div className="flex gap-1.5" aria-hidden="true">
+                      {[0, 1, 2, 3].map((index) => (
+                        <span
+                          key={index}
+                          className={cn(
+                            "h-1.5 flex-1 rounded-full transition-colors",
+                            index < strength.score ? strength.bar : "bg-border",
+                          )}
+                        />
+                      ))}
+                    </div>
+                    <p className="mt-2 text-xs text-muted-foreground" aria-live="polite">
+                      {password ? (
+                        <>
+                          Força da senha: <span className={cn("font-semibold", strength.text)}>{strength.label}</span>. Use
+                          letras, números e um caractere especial.
+                        </>
+                      ) : (
+                        "Use pelo menos 8 caracteres, incluindo uma letra e um número."
+                      )}
+                    </p>
+                  </div>
+                )}
               </div>
 
               {mode === "signup" && (
                 <div className="space-y-2">
                   <Label htmlFor="password-confirmation">Repita a senha</Label>
                   <div className="relative">
-                    <LockKeyhole className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+                    <LockKeyhole className="pointer-events-none absolute left-3.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
                     <Input
                       id="password-confirmation"
                       type={showPassword ? "text" : "password"}
@@ -427,25 +536,33 @@ function AuthPage() {
                       value={confirmation}
                       onChange={(e) => setConfirmation(e.target.value)}
                       placeholder="Digite a mesma senha"
-                      className="h-12 pl-10"
+                      className="h-12 rounded-xl pl-10 text-base md:text-sm"
                       maxLength={72}
                       disabled={loading}
                       required
                     />
                   </div>
+                  {confirmation.length > 0 && confirmation !== password && (
+                    <p className="text-xs text-destructive">As duas senhas ainda não são iguais.</p>
+                  )}
                 </div>
               )}
 
-              <Button type="submit" size="lg" className="h-12 w-full" disabled={loading}>
+              <Button
+                type="submit"
+                size="lg"
+                className="h-12 w-full rounded-xl text-sm font-semibold shadow-lg shadow-primary/20"
+                disabled={loading}
+              >
                 {loading ? <Loader2 className="animate-spin" /> : mode === "login" ? "Entrar na minha conta" : "Criar conta e continuar"}
                 {!loading && <ArrowRight />}
               </Button>
             </form>
           )}
 
-          <div className="my-7 flex items-center gap-3 text-xs text-muted-foreground">
+          <div className="my-7 flex items-center gap-3 text-xs font-medium text-muted-foreground">
             <span className="h-px flex-1 bg-border" />
-            ou
+            ou continue com
             <span className="h-px flex-1 bg-border" />
           </div>
 
@@ -453,7 +570,7 @@ function AuthPage() {
             type="button"
             variant="outline"
             size="lg"
-            className="h-12 w-full gap-3"
+            className="h-12 w-full gap-3 rounded-xl"
             onClick={signInWithGoogle}
             disabled={googleLoading || loading}
           >
@@ -470,14 +587,20 @@ function AuthPage() {
             Continuar com Google
           </Button>
 
-          <Button asChild variant="outline" size="lg" className="mt-3 h-12 w-full">
+          <Button asChild variant="ghost" size="lg" className="mt-2 h-11 w-full rounded-xl text-muted-foreground">
             <Link to="/comecar">
               Continuar sem conta <ArrowRight />
             </Link>
           </Button>
-          <p className="mt-3 text-center text-xs leading-5 text-muted-foreground">
-            Sem conta, seus dados ficam somente neste aparelho. Você poderá criar uma conta depois.
-          </p>
+
+          <div className="mt-6 space-y-2 border-t border-border pt-5 text-center">
+            <p className="flex items-center justify-center gap-1.5 text-xs text-muted-foreground">
+              <Check className="size-3.5 text-success" /> Sem conta, seus dados ficam somente neste aparelho.
+            </p>
+            <p className="text-xs leading-5 text-muted-foreground">
+              As estimativas do CasalPlan são referências educativas e não substituem nutricionista ou médico.
+            </p>
+          </div>
         </div>
       </section>
     </main>
